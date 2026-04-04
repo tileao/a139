@@ -603,8 +603,11 @@
       const rect = vizWrap.getBoundingClientRect();
       const scale = Math.min(rect.width / base.chartSize.width, rect.height / base.chartSize.height);
       const drawW = base.chartSize.width * scale;
-      const drawH = base.chartSize.height * scale;
-      return { scale, offsetX: (rect.width - drawW) / 2, offsetY: (rect.height - drawH) / 2 };
+      return {
+        scale,
+        offsetX: Math.max((rect.width - drawW) / 2, 0),
+        offsetY: 0
+      };
     }
 
     function resizeCanvas() {
