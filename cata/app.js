@@ -19,12 +19,12 @@ const els = {
   statusChip: document.getElementById('statusChip'),
   resultCard: document.getElementById('resultCard'),
   watMax: document.getElementById('watMaxMetric'),
+  watBox: document.getElementById('watBox'),
   watSummary: document.getElementById('watSummary'),
   watMarginSummary: document.getElementById('watMarginSummary'),
+  rtoBox: document.getElementById('rtoBox'),
   rtoMetric: document.getElementById('rtoMetric'),
   rtoSummary: document.getElementById('rtoSummary'),
-  gateChip: document.getElementById('gateChip'),
-  fullChip: document.getElementById('fullChip'),
   decisionBody: document.getElementById('decisionTableBody'),
   vizSubtitle: document.getElementById('vizSubtitle'),
   vizPlaceholder: document.getElementById('vizPlaceholder'),
@@ -225,32 +225,49 @@ async function runADC(input, rtoResult) {
 }
 
 function renderResults(wat, rto, adc) {
-  const watOk = (wat?.marginKg ?? -1) >= 0;
-  const runwayOk = /GO/i.test(adc?.fullText || '') && !/NO/i.test(adc?.fullText || '');
+  const decisionRows = adc?.rows || [];
+  const watOk = wat?.marginKg != null ? wat.marginKg >= 0 : false;
+  const badPoints = decisionRows.filter(row => !row.go).map(row => row.point);
+  const runwayOk = decisionRows.length ? badPoints.length === 0 : false;
   const overallOk = watOk && runwayOk;
 
   els.watMax.textContent = wat?.maxText || '—';
-  els.watSummary.textContent = wat?.summary || 'Sem cálculo ainda.';
-  els.watMarginSummary.textContent = wat?.marginKg == null
-    ? '—'
-    : `${wat.marginKg >= 0 ? '+' : ''}${Math.round(wat.marginKg)} kg ${wat.marginKg >= 0 ? 'de margem' : 'acima do limite'}`;
   els.rtoMetric.textContent = rto?.metricText || '—';
-  els.rtoSummary.textContent = rto?.summary || 'Sem cálculo ainda.';
 
-  els.gateChip.textContent = `Gate: ${adc?.gateText || '—'}`;
-  els.fullChip.textContent = `Full: ${adc?.fullText || '—'}`;
-  els.fullChip.className = 'mini-chip ' + (runwayOk ? 'ok' : 'bad');
+  if (wat?.marginKg == null) {
+    els.watSummary.textContent = wat?.summary || 'Sem cálculo ainda.';
+    els.watMarginSummary.textContent = '—';
+  } else if (watOk) {
+    els.watSummary.textContent = 'GO — peso dentro do limite WAT.';
+    els.watMarginSummary.textContent = `+${Math.round(wat.marginKg)} kg de margem`;
+  } else {
+    els.watSummary.textContent = 'NO GO — item negativo: WAT abaixo do peso requerido.';
+    els.watMarginSummary.textContent = `${Math.abs(Math.round(wat.marginKg))} kg acima do limite`;
+  }
+
+  if (!decisionRows.length) {
+    els.rtoSummary.textContent = rto?.summary || 'Sem cálculo ainda.';
+  } else if (runwayOk) {
+    els.rtoSummary.textContent = 'GO — todos os pontos da pista estão OK.';
+  } else {
+    els.rtoSummary.textContent = `NO GO — item negativo: ${badPoints.join(', ')}.`;
+  }
+
+  els.watBox.classList.remove('ok', 'bad');
+  els.rtoBox.classList.remove('ok', 'bad');
+  if (wat?.marginKg != null) els.watBox.classList.add(watOk ? 'ok' : 'bad');
+  if (decisionRows.length) els.rtoBox.classList.add(runwayOk ? 'ok' : 'bad');
 
   els.statusChip.textContent = overallOk ? 'OK para decolagem' : 'NO GO / revisar limites';
   els.statusChip.className = 'status-chip ' + (overallOk ? 'ok' : 'bad');
   els.resultCard.classList.remove('result-ok', 'result-bad', 'pending');
   els.resultCard.classList.add(overallOk ? 'result-ok' : 'result-bad');
 
-  if (!adc?.rows?.length) {
+  if (!decisionRows.length) {
     els.decisionBody.innerHTML = '<tr><td colspan="2" class="muted-cell">Sem análise ainda.</td></tr>';
     return;
   }
-  els.decisionBody.innerHTML = adc.rows.map(row => `
+  els.decisionBody.innerHTML = decisionRows.map(row => `
     <tr>
       <td>${row.point}</td>
       <td class="${row.go ? 'td-ok' : 'td-bad'}">${row.go ? 'OK' : 'NO'}</td>
