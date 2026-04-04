@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111b26">
+  <title>AW139 Companion — Cat A Clear Area</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="cockpit-shell">
+    <header class="topbar slim-topbar">
+      <div class="topbar-left">
+        <a class="nav-btn" href="../index.html" aria-label="Home">⌂</a>
+        <div class="product-tag no-sep">
+          <div class="product-icon">⛭</div>
+          <div>
+            <div class="product-line">AW139 Companion</div>
+            <div class="product-sub">Cat A Clear Area</div>
+          </div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button id="sidebarToggleBtn" class="nav-btn ghost-btn" type="button" aria-label="Mostrar ou ocultar entradas">☰</button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside id="sidebar" class="sidebar">
+        <section class="panel entry-panel">
+          <div class="panel-title-row">
+            <div>
+              <div class="panel-kicker">Fluxo composto</div>
+              <h1>Weight Altitude Temperature — Cat A</h1>
+            </div>
+          </div>
+
+          <div class="section-label">Operação</div>
+          <div class="form-grid form-grid-2">
+            <label class="field">
+              <span>Base</span>
+              <select id="baseSelect"></select>
+            </label>
+            <label class="field">
+              <span>Cabeceira</span>
+              <select id="departureEndSelect"></select>
+            </label>
+          </div>
+
+          <div class="form-grid form-grid-2">
+            <label class="field">
+              <span>Configuration</span>
+              <select id="configurationSelect">
+                <option value="standard" selected>Standard</option>
+                <option value="eaps_off">EAPS OFF</option>
+                <option value="eaps_on">EAPS ON</option>
+                <option value="ibf">IBF Installed</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Visualização</span>
+              <select id="visualSelect">
+                <option value="" selected>Em branco</option>
+                <option value="adc">ADC</option>
+                <option value="wat">WAT</option>
+                <option value="rto">RTO</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="section-label">Condições</div>
+          <div class="form-grid form-grid-2">
+            <label class="field">
+              <span>PA (ft)</span>
+              <input id="pressureAltitude" type="number" step="1" value="0" inputmode="numeric" enterkeyhint="next">
+            </label>
+            <label class="field">
+              <span>OAT (°C)</span>
+              <input id="oat" type="number" step="1" value="25" inputmode="numeric" enterkeyhint="next">
+            </label>
+          </div>
+
+          <div class="form-grid form-grid-2">
+            <label class="field">
+              <span>Weight (kg)</span>
+              <input id="actualWeight" type="number" step="1" value="6500" inputmode="numeric" enterkeyhint="next">
+            </label>
+            <label class="field">
+              <span>Headwind (kt)</span>
+              <input id="headwind" type="number" step="1" value="5" inputmode="numeric" enterkeyhint="go">
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button id="runBtn" class="run-btn" type="button">Calcular Cat A</button>
+            <button id="openWATBtn" class="ghost-btn" type="button">Abrir WAT</button>
+            <button id="openRTOBtn" class="ghost-btn" type="button">Abrir RTO</button>
+            <button id="openADCBtn" class="ghost-btn" type="button">Abrir ADC</button>
+          </div>
+          <p id="runHint" class="helper">Uma única entrada alimenta WAT e RTO. O RTO calculado é enviado para a tabela de decisão da ADC.</p>
+        </section>
+
+        <section id="resultCard" class="panel result-panel pending">
+          <div class="panel-title-row compact">
+            <div>
+              <div class="panel-kicker">Resultado</div>
+              <h2>Decision Summary</h2>
+            </div>
+            <span id="statusChip" class="status-chip warn">Aguardando cálculo</span>
+          </div>
+
+          <div class="result-grid">
+            <div class="result-box">
+              <div class="result-label">WAT</div>
+              <div class="result-value" id="watMaxMetric">—</div>
+              <div class="result-sub" id="watSummary">Sem cálculo ainda.</div>
+            </div>
+            <div class="result-box">
+              <div class="result-label">RTO</div>
+              <div class="result-value" id="rtoMetric">—</div>
+              <div class="result-sub" id="rtoSummary">Sem cálculo ainda.</div>
+            </div>
+          </div>
+
+          <div class="result-band" id="watMarginSummary">—</div>
+
+          <div class="mini-row">
+            <h3>Tabela de decisão</h3>
+            <div class="mini-chips">
+              <span id="gateChip" class="mini-chip">Gate: —</span>
+              <span id="fullChip" class="mini-chip">Full: —</span>
+            </div>
+          </div>
+
+          <table class="decision-table">
+            <thead>
+              <tr>
+                <th>Ponto</th>
+                <th>RTO</th>
+              </tr>
+            </thead>
+            <tbody id="decisionTableBody">
+              <tr><td colspan="2" class="muted-cell">Sem análise ainda.</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </aside>
+
+      <section id="viewerPane" class="viewer-pane is-empty">
+        <div class="viewer-header">
+          <div>
+            <div class="panel-kicker">Visualização</div>
+            <div class="viewer-title" id="vizSubtitle">Em branco</div>
+          </div>
+          <div class="viewer-tabs">
+            <button class="viewer-tab" data-viz="adc" type="button">ADC</button>
+            <button class="viewer-tab" data-viz="wat" type="button">WAT</button>
+            <button class="viewer-tab" data-viz="rto" type="button">RTO</button>
+          </div>
+        </div>
+
+        <div id="vizWrap" class="viewer-stage">
+          <div id="vizPlaceholder" class="viewer-placeholder">
+            <div class="placeholder-title">Visualização em branco</div>
+            <div class="placeholder-sub">A carta aparece após preencher e calcular, ou ao escolher uma visualização.</div>
+          </div>
+          <iframe id="adcFrame" class="viz-frame" src="../adc/?embed=1" allowfullscreen></iframe>
+          <iframe id="watFrame" class="viz-frame" src="../wat/?embed=1" allowfullscreen></iframe>
+          <iframe id="rtoFrame" class="viz-frame" src="../rto/?embed=1" allowfullscreen></iframe>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
