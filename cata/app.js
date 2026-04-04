@@ -9,7 +9,9 @@ const els = {
   departure: document.getElementById('departureEndSelect'),
   config: document.getElementById('configurationSelect'),
   pa: document.getElementById('pressureAltitude'),
+  paNegativeBtn: document.getElementById('paNegativeBtn'),
   oat: document.getElementById('oat'),
+  oatNegativeBtn: document.getElementById('oatNegativeBtn'),
   weight: document.getElementById('actualWeight'),
   wind: document.getElementById('headwind'),
   runBtn: document.getElementById('runBtn'),
@@ -54,6 +56,36 @@ function mapRtoConfig(config) {
   return ({ standard: 'standard', eaps_off: 'eapsOff', eaps_on: 'eapsOn', ibf: 'ibfInstalled' })[config] || 'standard';
 }
 function mapVizLabel(v) { return ({ adc: 'Carta ADC', wat: 'Carta WAT', rto: 'Carta RTO', '': 'Em branco' })[v] || 'Em branco'; }
+
+function sanitizeDigitsInput(el, maxLen = null) {
+  const allowNegative = el === els.pa || el === els.oat;
+  let raw = String(el.value ?? '').trim();
+  let negative = '';
+  if (allowNegative && raw.startsWith('-')) negative = '-';
+  const digits = raw.replace(/[^0-9]/g, '');
+  el.value = negative + (maxLen ? digits.slice(0, maxLen) : digits);
+}
+
+function toggleSignedInput(el, maxLen = null) {
+  const raw = String(el.value ?? '').trim();
+  const wantsNegative = !raw.startsWith('-');
+  const digits = raw.replace(/[^0-9]/g, '');
+  el.value = `${wantsNegative ? '-' : ''}${maxLen ? digits.slice(0, maxLen) : digits}`;
+  el.focus();
+  const caret = el.value.length;
+  try { el.setSelectionRange(caret, caret); } catch {}
+}
+
+function digitsOnlyLength(el) {
+  return String(el.value ?? '').replace(/[^0-9]/g, '').length;
+}
+
+function focusNext(target) {
+  if (!target) return;
+  if (target === els.runBtn) { els.runBtn.focus(); return; }
+  target.focus();
+  target.select?.();
+}
 
 
 async function waitForIframe(frame, ids = []) {
@@ -356,21 +388,42 @@ function setVisualization(mode, forceShow = true) {
 }
 
 function setupAutoAdvance() {
-  const order = [els.base, els.departure, els.config, els.pa, els.oat, els.weight, els.wind];
-  order.forEach((el, idx) => {
-    const next = order[idx + 1];
-    if (!el) return;
-    if (el.tagName === 'SELECT') {
-      el.addEventListener('change', () => next?.focus());
-    } else {
-      el.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter') return;
-        event.preventDefault();
-        if (next) next.focus();
-        else els.runBtn.click();
-      });
+  const rules = [
+    { el: els.base, next: els.departure },
+    { el: els.departure, next: els.config },
+    { el: els.config, next: els.visualSelect },
+    { el: els.visualSelect, next: els.pa },
+    { el: els.pa, next: els.oat, minDigits: 3, maxDigits: 5 },
+    { el: els.oat, next: els.weight, minDigits: 2, maxDigits: 2 },
+    { el: els.weight, next: els.wind, minDigits: 4, maxDigits: 4 },
+    { el: els.wind, next: els.runBtn, minDigits: 1, maxDigits: 2 },
+  ];
+
+  rules.forEach((rule) => {
+    if (!rule.el) return;
+    if (rule.el.tagName === 'SELECT') {
+      rule.el.addEventListener('change', () => focusNext(rule.next));
+      return;
     }
+
+    rule.el.addEventListener('input', () => {
+      sanitizeDigitsInput(rule.el, rule.maxDigits);
+      const digits = digitsOnlyLength(rule.el);
+      if (rule.el === els.oat ? digits === rule.minDigits : digits >= rule.minDigits) {
+        focusNext(rule.next);
+      }
+    });
+
+    rule.el.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      if (rule.next === els.runBtn) els.runBtn.click();
+      else focusNext(rule.next);
+    });
   });
+
+  els.paNegativeBtn?.addEventListener('click', () => toggleSignedInput(els.pa, 5));
+  els.oatNegativeBtn?.addEventListener('click', () => toggleSignedInput(els.oat, 2));
 }
 
 async function runFlow() {

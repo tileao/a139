@@ -72,22 +72,28 @@
           <div class="form-grid form-grid-2">
             <label class="field">
               <span>PA (ft)</span>
-              <input id="pressureAltitude" type="number" step="1" value="0" inputmode="numeric" enterkeyhint="next">
+              <div class="input-with-toggle">
+                <button id="paNegativeBtn" type="button" class="sign-toggle" aria-label="Alternar sinal da altitude pressão">−</button>
+                <input id="pressureAltitude" type="text" value="0" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="0">
+              </div>
             </label>
             <label class="field">
               <span>OAT (°C)</span>
-              <input id="oat" type="number" step="1" value="25" inputmode="numeric" enterkeyhint="next">
+              <div class="input-with-toggle">
+                <button id="oatNegativeBtn" type="button" class="sign-toggle" aria-label="Alternar sinal da temperatura">−</button>
+                <input id="oat" type="text" value="25" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="25" maxlength="3">
+              </div>
             </label>
           </div>
 
           <div class="form-grid form-grid-2">
             <label class="field">
               <span>Weight (kg)</span>
-              <input id="actualWeight" type="number" step="1" value="6500" inputmode="numeric" enterkeyhint="next">
+              <input id="actualWeight" type="text" value="6500" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="6500">
             </label>
             <label class="field">
               <span>Headwind (kt)</span>
-              <input id="headwind" type="number" step="1" value="5" inputmode="numeric" enterkeyhint="go">
+              <input id="headwind" type="text" value="5" inputmode="numeric" enterkeyhint="go" autocomplete="off" placeholder="5">
             </label>
           </div>
 
