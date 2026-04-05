@@ -379,8 +379,9 @@ function applyUnifiedChartView(doc, mode) {
       main.app-shell{padding:0!important;display:block!important}
       #chartPanel{display:block!important;padding:0!important;margin:0!important}
       .card-title-row,.toolbar-row,.legend,#chartHint,#chartReference,.hero,.topbar,.form-card,.status,.interp-box,#interpSection,.top-embed-bar,.back-chip,.home-chip{display:none!important}
-      .chart-stage{margin:0!important;height:100vh!important;display:flex;align-items:flex-start;justify-content:flex-start;overflow:auto;background:#000!important;border-radius:0!important;padding:0!important}
-      #chartBaseImage,#chartCanvas{max-width:100%;height:auto;flex:0 0 auto;display:block}
+      .chart-stage{margin:0!important;display:block!important;overflow:hidden!important;background:#000!important;border-radius:0!important;padding:0!important;height:auto!important;min-height:0!important}
+      #chartBaseImage{display:block!important;width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important}
+      #chartCanvas{width:100%!important;height:auto!important;display:block!important}
     `;
     doc.head.appendChild(style);
     addFullscreenClick(doc, '.chart-stage');
@@ -406,8 +407,8 @@ function applyUnifiedChartView(doc, mode) {
       main.app-shell{padding:0!important;display:block!important}
       #chartPanel{display:block!important;padding:0!important;margin:0!important}
       .card-title-row,.toolbar-row,.legend,#chartHint,#chartReference,.hero,.topbar,.form-card,.status,.compact,#interpSection,.pill,.top-embed-bar,.back-chip,.home-chip{display:none!important}
-      .chart-stage{margin:0!important;height:100vh!important;display:flex;align-items:flex-start;justify-content:flex-start;overflow:auto;background:#000!important;border-radius:0!important;cursor:zoom-in;padding:0!important}
-      #chartCanvas{max-width:100%;height:auto;flex:0 0 auto;display:block}
+      .chart-stage{margin:0!important;display:block!important;overflow:hidden!important;background:#000!important;border-radius:0!important;cursor:zoom-in;padding:0!important;height:auto!important;min-height:0!important}
+      #chartCanvas{width:100%!important;height:auto!important;max-width:100%!important;display:block!important}
     `;
     doc.head.appendChild(style);
     addFullscreenClick(doc, '.chart-stage');
@@ -424,8 +425,8 @@ function applyUnifiedChartView(doc, mode) {
       .left{display:none!important}
       .right{border:0!important;border-radius:0!important;box-shadow:none!important;min-height:100%!important;background:#000!important}
       .viz-head,.legend,.capture-banner,.topbar,.top-embed-bar,.back-chip,.home-chip{display:none!important}
-      .viz-wrap{min-height:100vh!important;height:100vh!important;background:#000!important;cursor:zoom-in;display:flex;align-items:flex-start;justify-content:flex-start;overflow:auto}
-      #vizCanvas{width:auto!important;height:auto!important;max-width:100%!important;max-height:none!important;background:#000!important;flex:0 0 auto;display:block}
+      .viz-wrap{background:#000!important;cursor:zoom-in;display:block!important;overflow:hidden!important;height:auto!important;min-height:0!important}
+      #vizCanvas{width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;background:#000!important;display:block!important}
       .chart-close{display:none!important}
     `;
     doc.head.appendChild(style);
@@ -483,15 +484,15 @@ function getLegendForMode(mode) {
 function getVisualizationMeta(mode) {
   if (!mode) return { legend: [], facts: [] };
   if (mode === 'adc') {
-    const baseDef = baseLibrary?.[els.base.value];
-    const dep = els.departure.value;
+    const baseText = els.base.options[els.base.selectedIndex]?.text || els.base.value || '—';
+    const depText = els.departure.options[els.departure.selectedIndex]?.text || els.departure.value || '—';
     return {
       legend: getLegendForMode('adc'),
       facts: [
-        { label: 'Gráfico', value: `ADC ${baseDef?.id || ''}`.trim() },
+        { label: 'Gráfico', value: 'ADC' },
         { label: 'Página', value: 'Page 1' },
-        { label: 'Base', value: baseDef ? `${baseDef.id} — ${baseDef.name}` : (els.base.options[els.base.selectedIndex]?.text || '—') },
-        { label: 'Cabeceira', value: dep || '—' },
+        { label: 'Base', value: baseText },
+        { label: 'Cabeceira', value: depText },
       ]
     };
   }
@@ -526,6 +527,27 @@ function renderVisualizationMeta(mode) {
   `).join('');
 }
 
+
+function resizeActiveFrame(mode) {
+  const frame = frameMap[mode];
+  if (!frame) return;
+  try {
+    const doc = frame.contentDocument || frame.contentWindow?.document;
+    if (!doc) return;
+    const body = doc.body;
+    const html = doc.documentElement;
+    const h = Math.max(
+      body?.scrollHeight || 0,
+      body?.offsetHeight || 0,
+      html?.scrollHeight || 0,
+      html?.offsetHeight || 0
+    );
+    if (h > 0) frame.style.height = `${h}px`;
+  } catch (error) {
+    console.warn('Falha ao ajustar altura do frame', mode, error);
+  }
+}
+
 function clearVisualization() {
   Object.values(frameMap).forEach(frame => frame.classList.remove('active'));
   document.querySelectorAll('.viewer-tab').forEach(btn => btn.classList.remove('active'));
@@ -550,7 +572,11 @@ function setVisualization(mode, forceShow = true) {
   els.visualSelect.value = mode;
   els.vizSubtitle.textContent = mapVizLabel(mode);
   renderVisualizationMeta(mode);
-  prepareEmbeddedView(mode).then(() => renderVisualizationMeta(mode));
+  prepareEmbeddedView(mode).then(async () => {
+    await sleep(80);
+    resizeActiveFrame(mode);
+    renderVisualizationMeta(mode);
+  });
 }
 
 function setupAutoAdvance() {
@@ -653,6 +679,9 @@ window.addEventListener('load', async () => {
     ]);
     await populateBaseOptions();
     await Promise.all([prepareEmbeddedView('adc'), prepareEmbeddedView('wat'), prepareEmbeddedView('rto')]);
+    resizeActiveFrame('adc');
+    resizeActiveFrame('wat');
+    resizeActiveFrame('rto');
   } catch (error) {
     console.error('Falha ao inicializar integração', error);
   }
