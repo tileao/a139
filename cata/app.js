@@ -193,7 +193,7 @@ async function runWAT(input) {
   setField(doc, 'oat', input.oatC);
   setField(doc, 'actualWeight', input.weightKg);
   setField(doc, 'headwind', input.headwindKt);
-  clickField(doc, 'runBtn');
+  try { doc.defaultView?.runCalculation?.(); } catch { clickField(doc, 'runBtn'); }
 
   const maxText = await waitForTruthy(() => {
     const t = text(doc, 'maxWeight');
@@ -218,28 +218,48 @@ async function runRTO(input) {
   const metricFtEl = doc.getElementById('finalMetricFt');
   const statusDetailEl = doc.getElementById('statusDetail');
   const statusTextEl = doc.getElementById('statusText');
+  const previousMetric = text(doc, 'finalMetric');
   if (metricEl) metricEl.textContent = '—';
   if (metricFtEl) metricFtEl.textContent = '—';
   if (statusDetailEl) statusDetailEl.textContent = 'Recalculando…';
   if (statusTextEl) statusTextEl.textContent = 'Aguardando nova leitura.';
 
   setField(doc, 'configuration', mapRtoConfig(input.configuration));
-  await sleep(1100);
+  await sleep(120);
+  try {
+    await doc.defaultView?.ensureEffectiveProfileLoaded?.({ preserveInputs: true, autoRun: false });
+  } catch {}
   setField(doc, 'pressureAltitude', input.pressureAltitudeFt);
   setField(doc, 'oat', input.oatC);
   setField(doc, 'actualWeight', input.weightKg);
   setField(doc, 'headwind', input.headwindKt);
   await sleep(80);
-  clickField(doc, 'runBtn');
+  try {
+    await doc.defaultView?.runCalculation?.({ skipEnsureProfile: true });
+  } catch {
+    clickField(doc, 'runBtn');
+  }
 
-  const metricText = await waitForTruthy(() => {
+  let metricText = await waitForTruthy(() => {
     const t = text(doc, 'finalMetric');
-    return /\d/.test(t) && t !== '—' ? t : null;
+    const pending = /recalculando|aguardando/i.test(text(doc, 'statusDetail')) || /recalculando|aguardando/i.test(text(doc, 'statusText'));
+    return /\d/.test(t) && t !== '—' && !pending && (t !== previousMetric || previousMetric === '—') ? t : null;
   }, 7000);
+
+  if (!metricText) {
+    try { await doc.defaultView?.runCalculation?.({ skipEnsureProfile: true }); } catch { clickField(doc, 'runBtn'); }
+    metricText = await waitForTruthy(() => {
+      const t = text(doc, 'finalMetric');
+      const pending = /recalculando|aguardando/i.test(text(doc, 'statusDetail')) || /recalculando|aguardando/i.test(text(doc, 'statusText'));
+      return /\d/.test(t) && t !== '—' && !pending ? t : null;
+    }, 5000);
+  }
+
+  metricText = metricText || text(doc, 'finalMetric');
   const summary = text(doc, 'statusDetail') || text(doc, 'statusText');
   const result = {
-    metricText: metricText || text(doc, 'finalMetric'),
-    rtoMeters: numberFromText(metricText || text(doc, 'finalMetric')),
+    metricText,
+    rtoMeters: numberFromText(metricText),
     summary
   };
   pushSharedContext(input, { rtoMeters: result.rtoMeters });
@@ -260,7 +280,7 @@ async function runADC(input, rtoResult) {
   setField(doc, 'departureEndSelect', input.departureEnd);
   if (rtoResult?.rtoMeters != null) setField(doc, 'rtoInput', rtoResult.rtoMeters);
   await sleep(60);
-  clickField(doc, 'analyzeBtn');
+  try { doc.defaultView?.analyze?.(); } catch { clickField(doc, 'analyzeBtn'); }
   await waitForTruthy(() => doc.querySelectorAll('#decisionTable tr').length > 0, 4500);
 
   const rows = [...doc.querySelectorAll('#decisionTable tr')].map(tr => {
@@ -339,9 +359,10 @@ function renderResults(wat, rto, adc) {
 }
 
 function toggleVizFullscreen(force = null) {
-  const on = force == null ? !els.viewerPane.classList.contains('viz-fullscreen') : !!force;
-  els.viewerPane.classList.toggle('viz-fullscreen', on);
-  document.body.classList.toggle('fullscreen-body', on);
+  if (force === false) { closeFullscreenChart(); return; }
+  const activeMode = els.visualSelect.value || document.querySelector('.viewer-tab.active')?.dataset.viz;
+  if (!activeMode) return;
+  openFullscreenChart(activeMode);
 }
 window.toggleCataVizFullscreen = toggleVizFullscreen;
 
@@ -370,17 +391,17 @@ function applyUnifiedChartView(doc, mode) {
     section.style.margin = '0';
     section.style.border = '0';
     section.style.borderRadius = '0';
-    section.style.background = '#fff';
+    section.style.background = '#000';
     const style = doc.createElement('style');
     style.id = 'cataEmbedStyleUnified';
     style.textContent = `
-      html,body{height:100%;margin:0;background:#fff!important}
+      html,body{height:100%;margin:0;background:#000!important}
       body{overflow:hidden}
       main.app-shell{padding:0!important;display:block!important}
       #chartPanel{display:block!important;padding:0!important;margin:0!important}
       .card-title-row,.toolbar-row,.legend,#chartHint,#chartReference,.hero,.topbar,.form-card,.status,.interp-box,#interpSection,.top-embed-bar,.back-chip,.home-chip{display:none!important}
-      .chart-stage{margin:0!important;display:block!important;overflow:hidden!important;background:#fff!important;border-radius:0!important;padding:0!important;height:auto!important;min-height:0!important}
-      #chartBaseImage{display:block!important;width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;margin:0!important}
+      .chart-stage{margin:0!important;display:block!important;overflow:hidden!important;background:#000!important;border-radius:0!important;padding:0!important;height:auto!important;min-height:0!important}
+      #chartBaseImage{display:block!important;width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important}
       #chartCanvas{width:100%!important;height:auto!important;display:block!important}
     `;
     doc.head.appendChild(style);
@@ -398,16 +419,16 @@ function applyUnifiedChartView(doc, mode) {
     section.style.margin = '0';
     section.style.border = '0';
     section.style.borderRadius = '0';
-    section.style.background = '#fff';
+    section.style.background = '#000';
     const style = doc.createElement('style');
     style.id = 'cataEmbedStyleUnified';
     style.textContent = `
-      html,body{height:100%;margin:0;background:#fff!important}
+      html,body{height:100%;margin:0;background:#000!important}
       body{overflow:hidden}
       main.app-shell{padding:0!important;display:block!important}
       #chartPanel{display:block!important;padding:0!important;margin:0!important}
       .card-title-row,.toolbar-row,.legend,#chartHint,#chartReference,.hero,.topbar,.form-card,.status,.compact,#interpSection,.pill,.top-embed-bar,.back-chip,.home-chip{display:none!important}
-      .chart-stage{margin:0!important;display:block!important;overflow:hidden!important;background:#fff!important;border-radius:0!important;cursor:zoom-in;padding:0!important;height:auto!important;min-height:0!important}
+      .chart-stage{margin:0!important;display:block!important;overflow:hidden!important;background:#000!important;border-radius:0!important;cursor:zoom-in;padding:0!important;height:auto!important;min-height:0!important}
       #chartCanvas{width:100%!important;height:auto!important;max-width:100%!important;display:block!important}
     `;
     doc.head.appendChild(style);
@@ -419,14 +440,14 @@ function applyUnifiedChartView(doc, mode) {
     const style = doc.createElement('style');
     style.id = 'cataEmbedStyleUnified';
     style.textContent = `
-      html,body{height:100%;margin:0;background:#fff!important}
+      html,body{margin:0;background:#000!important;height:auto!important;min-height:0!important}
       body{overflow:hidden}
-      .shell{padding:0!important;gap:0!important;grid-template-columns:1fr!important;min-height:100%!important}
+      .shell{padding:0!important;gap:0!important;display:block!important;grid-template-columns:1fr!important;min-height:0!important;height:auto!important}
       .left{display:none!important}
-      .right{border:0!important;border-radius:0!important;box-shadow:none!important;min-height:100%!important;background:#fff!important}
+      .right{display:block!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-height:0!important;height:auto!important;background:#000!important}
       .viz-head,.legend,.capture-banner,.topbar,.top-embed-bar,.back-chip,.home-chip{display:none!important}
-      .viz-wrap{background:#fff!important;cursor:zoom-in;display:block!important;overflow:hidden!important;height:auto!important;min-height:0!important}
-      #vizCanvas{width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;background:#fff!important;display:block!important}
+      .viz-wrap{background:#000!important;cursor:zoom-in;display:block!important;overflow:hidden!important;height:auto!important;min-height:0!important;line-height:0}
+      #vizCanvas{width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;background:#000!important;display:block!important}
       .chart-close{display:none!important}
     `;
     doc.head.appendChild(style);
@@ -528,20 +549,30 @@ function renderVisualizationMeta(mode) {
 }
 
 
+function getModeContentHeight(doc, mode) {
+  if (!doc) return 0;
+  const byRect = (el) => el ? Math.ceil(el.getBoundingClientRect().height) : 0;
+  if (mode === 'adc') {
+    return Math.ceil(doc.defaultView?.__cataEmbedContentHeight || 0) || byRect(doc.getElementById('vizCanvas')) || byRect(doc.getElementById('vizWrap'));
+  }
+  if (mode === 'wat') {
+    return Math.max(byRect(doc.getElementById('chartBaseImage')), byRect(doc.getElementById('chartCanvas')), 0);
+  }
+  if (mode === 'rto') {
+    return byRect(doc.getElementById('chartCanvas')) || byRect(doc.getElementById('chartStage'));
+  }
+  const body = doc.body;
+  const html = doc.documentElement;
+  return Math.max(body?.scrollHeight || 0, body?.offsetHeight || 0, html?.scrollHeight || 0, html?.offsetHeight || 0);
+}
+
 function resizeActiveFrame(mode) {
   const frame = frameMap[mode];
   if (!frame) return;
   try {
     const doc = frame.contentDocument || frame.contentWindow?.document;
     if (!doc) return;
-    const body = doc.body;
-    const html = doc.documentElement;
-    const h = Math.max(
-      body?.scrollHeight || 0,
-      body?.offsetHeight || 0,
-      html?.scrollHeight || 0,
-      html?.offsetHeight || 0
-    );
+    const h = getModeContentHeight(doc, mode);
     if (h > 0) frame.style.height = `${h}px`;
   } catch (error) {
     console.warn('Falha ao ajustar altura do frame', mode, error);
@@ -556,6 +587,82 @@ function clearVisualization() {
   els.vizSubtitle.textContent = mapVizLabel('');
   els.visualSelect.value = '';
   renderVisualizationMeta('');
+}
+
+const fullscreenEls = {
+  overlay: document.getElementById('chartFullscreenOverlay'),
+  viewport: document.getElementById('chartFullscreenViewport'),
+  canvas: document.getElementById('chartFullscreenCanvas'),
+  close: document.getElementById('chartFullscreenClose'),
+};
+const fullscreenState = { active: false, scale: 1, minScale: 1, maxScale: 4, x: 0, y: 0, startX: 0, startY: 0, dragging: false, moved: false };
+
+function drawFullscreenSource(mode) {
+  const out = fullscreenEls.canvas;
+  const ctx = out.getContext('2d');
+  if (mode === 'adc') {
+    const doc = adcFrame.contentDocument;
+    const src = doc?.getElementById('vizCanvas');
+    if (!src) return false;
+    out.width = src.width || Math.ceil(src.getBoundingClientRect().width) || 1;
+    out.height = src.height || Math.ceil(src.getBoundingClientRect().height) || 1;
+    ctx.clearRect(0,0,out.width,out.height);
+    ctx.drawImage(src,0,0,out.width,out.height);
+    return true;
+  }
+  if (mode === 'rto') {
+    const doc = rtoFrame.contentDocument;
+    const src = doc?.getElementById('chartCanvas');
+    if (!src) return false;
+    out.width = src.width || Math.ceil(src.getBoundingClientRect().width) || 1;
+    out.height = src.height || Math.ceil(src.getBoundingClientRect().height) || 1;
+    ctx.clearRect(0,0,out.width,out.height);
+    ctx.drawImage(src,0,0,out.width,out.height);
+    return true;
+  }
+  if (mode === 'wat') {
+    const doc = watFrame.contentDocument;
+    const img = doc?.getElementById('chartBaseImage');
+    const overlay = doc?.getElementById('chartCanvas');
+    if (!img) return false;
+    const w = img.naturalWidth || img.width || Math.ceil(img.getBoundingClientRect().width) || 1;
+    const h = img.naturalHeight || img.height || Math.ceil(img.getBoundingClientRect().height) || 1;
+    out.width = w; out.height = h;
+    ctx.clearRect(0,0,w,h);
+    ctx.drawImage(img,0,0,w,h);
+    if (overlay) ctx.drawImage(overlay,0,0,w,h);
+    return true;
+  }
+  return false;
+}
+
+function applyFullscreenTransform() {
+  fullscreenEls.canvas.style.transform = `translate(${fullscreenState.x}px, ${fullscreenState.y}px) scale(${fullscreenState.scale})`;
+}
+
+function fitFullscreenCanvas() {
+  const vp = fullscreenEls.viewport;
+  const c = fullscreenEls.canvas;
+  const scale = Math.min(vp.clientWidth / c.width, vp.clientHeight / c.height, 1);
+  fullscreenState.scale = scale;
+  fullscreenState.minScale = scale;
+  fullscreenState.x = (vp.clientWidth - c.width * scale) / 2;
+  fullscreenState.y = (vp.clientHeight - c.height * scale) / 2;
+  applyFullscreenTransform();
+}
+
+function closeFullscreenChart() {
+  fullscreenState.active = false;
+  fullscreenEls.overlay.hidden = true;
+  document.body.classList.remove('fullscreen-body');
+}
+
+function openFullscreenChart(mode) {
+  if (!drawFullscreenSource(mode)) return;
+  fullscreenState.active = true;
+  fullscreenEls.overlay.hidden = false;
+  document.body.classList.add('fullscreen-body');
+  fitFullscreenCanvas();
 }
 
 function setVisualization(mode, forceShow = true) {
@@ -630,6 +737,8 @@ async function runFlow() {
     const adc = await runADC(input, rto);
     renderResults(wat, rto, adc);
     setVisualization(els.visualSelect.value || 'adc');
+    await sleep(120);
+    resizeActiveFrame(els.visualSelect.value || 'adc');
   } catch (error) {
     console.error(error);
     els.statusChip.textContent = 'Erro na integração';
@@ -662,9 +771,58 @@ function bindEvents() {
     location.href = '../adc/?back=1&return=' + encodeURIComponent('../cata/');
   });
   els.sidebarToggleBtn.addEventListener('click', () => setSidebarCollapsed());
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && els.viewerPane.classList.contains('viz-fullscreen')) toggleVizFullscreen(false);
+  fullscreenEls.close.addEventListener('click', (event) => {
+    event.stopPropagation();
+    closeFullscreenChart();
   });
+  fullscreenEls.viewport.addEventListener('click', () => {
+    if (fullscreenState.scale <= fullscreenState.minScale + 0.01 && !fullscreenState.moved) closeFullscreenChart();
+    fullscreenState.moved = false;
+  });
+  fullscreenEls.viewport.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    const delta = event.deltaY < 0 ? 1.15 : 0.87;
+    fullscreenState.scale = Math.max(fullscreenState.minScale, Math.min(fullscreenState.maxScale, fullscreenState.scale * delta));
+    applyFullscreenTransform();
+  }, { passive: false });
+  fullscreenEls.viewport.addEventListener('pointerdown', (event) => {
+    fullscreenState.dragging = true;
+    fullscreenState.moved = false;
+    fullscreenState.startX = event.clientX - fullscreenState.x;
+    fullscreenState.startY = event.clientY - fullscreenState.y;
+  });
+  fullscreenEls.viewport.addEventListener('pointermove', (event) => {
+    if (!fullscreenState.dragging || fullscreenState.scale <= fullscreenState.minScale + 0.01) return;
+    fullscreenState.x = event.clientX - fullscreenState.startX;
+    fullscreenState.y = event.clientY - fullscreenState.startY;
+    fullscreenState.moved = true;
+    applyFullscreenTransform();
+  });
+  const endDrag = () => { fullscreenState.dragging = false; };
+  fullscreenEls.viewport.addEventListener('pointerup', endDrag);
+  fullscreenEls.viewport.addEventListener('pointercancel', endDrag);
+  let touchDist = null;
+  let touchScale = null;
+  fullscreenEls.viewport.addEventListener('touchstart', (event) => {
+    if (event.touches.length === 2) {
+      const [a,b] = event.touches;
+      touchDist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+      touchScale = fullscreenState.scale;
+    }
+  }, { passive: true });
+  fullscreenEls.viewport.addEventListener('touchmove', (event) => {
+    if (event.touches.length === 2 && touchDist) {
+      const [a,b] = event.touches;
+      const newDist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+      fullscreenState.scale = Math.max(fullscreenState.minScale, Math.min(fullscreenState.maxScale, touchScale * (newDist / touchDist)));
+      applyFullscreenTransform();
+    }
+  }, { passive: true });
+  fullscreenEls.viewport.addEventListener('touchend', () => { touchDist = null; touchScale = null; });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && fullscreenState.active) closeFullscreenChart();
+  });
+  window.addEventListener('resize', () => { if (fullscreenState.active) fitFullscreenCanvas(); });
 }
 
 window.addEventListener('load', async () => {

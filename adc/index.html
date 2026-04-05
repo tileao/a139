@@ -593,6 +593,7 @@
     const ctx = canvas.getContext('2d');
     const vizWrap = document.getElementById('vizWrap');
     const captureBanner = document.getElementById('captureBanner');
+    const EMBED_MODE = new URLSearchParams(location.search).has('embed');
     const chartImg = new Image();
     const mainView = document.querySelector('.right');
     chartImg.onload = () => { resizeCanvas(); draw(); };
@@ -636,27 +637,49 @@
     function fixedFitTransform() {
       const base = currentBase();
       const rect = vizWrap.getBoundingClientRect();
+      if (EMBED_MODE) {
+        const scale = rect.width / base.chartSize.width;
+        return {
+          scale,
+          offsetX: 0,
+          offsetY: 0,
+          drawWidth: base.chartSize.width * scale,
+          drawHeight: base.chartSize.height * scale
+        };
+      }
       const scale = Math.min(rect.width / base.chartSize.width, rect.height / base.chartSize.height);
       const drawW = base.chartSize.width * scale;
       return {
         scale,
         offsetX: Math.max((rect.width - drawW) / 2, 0),
-        offsetY: 0
+        offsetY: 0,
+        drawWidth: drawW,
+        drawHeight: base.chartSize.height * scale
       };
     }
 
     function resizeCanvas() {
-      const rect = vizWrap.getBoundingClientRect();
+      const base = currentBase();
+      let rect = vizWrap.getBoundingClientRect();
+      if (EMBED_MODE) {
+        const scaleForHeight = rect.width / base.chartSize.width;
+        const drawHeight = Math.ceil(base.chartSize.height * scaleForHeight);
+        vizWrap.style.height = drawHeight + 'px';
+        vizWrap.style.minHeight = '0';
+        rect = vizWrap.getBoundingClientRect();
+      }
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.round(rect.width * dpr);
-      canvas.height = Math.round(rect.height * dpr);
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const fit = fixedFitTransform();
+      const targetHeight = EMBED_MODE ? fit.drawHeight : rect.height;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(targetHeight * dpr);
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = targetHeight + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       state.scale = fit.scale;
       state.offsetX = fit.offsetX;
       state.offsetY = fit.offsetY;
+      if (EMBED_MODE) window.__cataEmbedContentHeight = Math.ceil(targetHeight);
       draw();
     }
 

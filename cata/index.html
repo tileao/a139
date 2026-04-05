@@ -148,8 +148,7 @@
         </section>
       </aside>
 
-      <section class="viewer-column">
-        <section id="viewerPane" class="viewer-pane is-empty">
+      <section id="viewerPane" class="viewer-pane is-empty">
         <div class="viewer-header">
           <div>
             <div class="panel-kicker">Visualização</div>
@@ -172,15 +171,7 @@
           <iframe id="rtoFrame" class="viz-frame" src="../rto/?embed=1" allowfullscreen></iframe>
         </div>
 
-        </section>
-
-        <section id="viewerMeta" class="panel meta-panel" hidden>
-          <div class="panel-title-row compact">
-            <div>
-              <div class="panel-kicker">Referência</div>
-              <h2>Legenda e dados do gráfico</h2>
-            </div>
-          </div>
+        <div id="viewerMeta" class="viewer-meta" hidden>
           <div class="viewer-meta-block">
             <div class="viewer-meta-title">Legenda</div>
             <div id="vizLegend" class="viz-legend"></div>
@@ -189,10 +180,19 @@
             <div class="viewer-meta-title">Referência do gráfico</div>
             <div id="vizFacts" class="viz-facts"></div>
           </div>
-        </section>
+        </div>
       </section>
     </section>
   </main>
+
+  <div id="chartFullscreenOverlay" class="chart-fullscreen-overlay" hidden>
+    <div class="chart-fullscreen-top">
+      <button id="chartFullscreenClose" class="chart-fullscreen-close" type="button" aria-label="Fechar tela cheia">✕</button>
+    </div>
+    <div id="chartFullscreenViewport" class="chart-fullscreen-viewport">
+      <canvas id="chartFullscreenCanvas" class="chart-fullscreen-canvas" width="1" height="1"></canvas>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
