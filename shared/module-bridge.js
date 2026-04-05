@@ -80,22 +80,28 @@
   }
   function addBar(){
     if(isEmbed) return;
+    const slot=document.querySelector('.topbar-right');
+    const isTopbarMode=!!slot;
     const bar=document.createElement('div');
     bar.id='integrationBridgeBar';
-    bar.className = hasBack ? 'bridge-inline' : 'bridge-floating';
-    bar.innerHTML=`${hasBack?'<button type="button" data-act="back">Voltar</button>':''}<a href="../index.html">AW139 Home</a><button type="button" data-act="load">Ler contexto</button><button type="button" data-act="save">Salvar contexto</button>${mod==='adc'?'<button type="button" data-act="inbox">Enviar ao inbox ADC</button>':''}`;
+    bar.className = isTopbarMode ? 'bridge-topbar' : (hasBack ? 'bridge-inline' : 'bridge-floating');
+    bar.innerHTML=`${hasBack?'<button type="button" data-act="back">Voltar</button>':''}<a href="../index.html">Home</a><button type="button" data-act="load">Ler contexto</button><button type="button" data-act="save">Salvar contexto</button>${mod==='adc'?'<button type="button" data-act="inbox">Inbox ADC</button>':''}`;
     const style=document.createElement('style');
     style.textContent=`
-      #integrationBridgeBar{display:flex;gap:8px;flex-wrap:wrap;max-width:min(96vw,720px);padding:10px;border-radius:14px;background:rgba(5,10,18,.92);border:1px solid rgba(148,163,184,.18);box-shadow:0 12px 32px rgba(0,0,0,.28)}
-      #integrationBridgeBar a,#integrationBridgeBar button{border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.04);color:#e5eef8;text-decoration:none;padding:8px 10px;border-radius:10px;font:600 12px Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;cursor:pointer}
-      #integrationBridgeBar button:hover,#integrationBridgeBar a:hover{border-color:rgba(32,184,255,.42)}
-      #integrationBridgeBar.bridge-floating{position:fixed;right:14px;bottom:14px;z-index:99999}
+      #integrationBridgeBar{display:flex;gap:8px;flex-wrap:wrap;max-width:min(96vw,720px);padding:0;border-radius:14px;background:transparent;border:0;box-shadow:none}
+      #integrationBridgeBar a,#integrationBridgeBar button{border:1px solid rgba(255,255,255,.12);background:#243447;color:#e5eef8;text-decoration:none;padding:8px 10px;border-radius:10px;font:700 12px Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;cursor:pointer;line-height:1.2}
+      #integrationBridgeBar button:hover,#integrationBridgeBar a:hover{border-color:rgba(70,194,186,.55);box-shadow:0 0 0 3px rgba(47,167,160,.12)}
+      #integrationBridgeBar.bridge-floating{position:fixed;right:14px;bottom:14px;z-index:99999;background:rgba(5,10,18,.92);padding:10px;border-radius:14px;border:1px solid rgba(148,163,184,.18);box-shadow:0 12px 32px rgba(0,0,0,.28)}
       #integrationBridgeBar.bridge-inline{position:relative;z-index:20;margin:12px auto 0;justify-content:center}
+      #integrationBridgeBar.bridge-topbar{align-items:center;justify-content:flex-end;max-width:none}
       body.bridge-with-inline{padding-top:0!important}
-      @media (max-width: 900px){#integrationBridgeBar.bridge-inline{max-width:calc(100vw - 20px);margin-top:10px}}
+      @media (max-width: 900px){#integrationBridgeBar.bridge-inline{max-width:calc(100vw - 20px);margin-top:10px} #integrationBridgeBar.bridge-topbar{width:100%;justify-content:flex-end}}
+      @media (max-width: 640px){#integrationBridgeBar.bridge-topbar a,#integrationBridgeBar.bridge-topbar button{padding:7px 9px;font-size:11px}}
     `;
     document.head.appendChild(style);
-    if(hasBack){
+    if(isTopbarMode){
+      slot.appendChild(bar);
+    } else if(hasBack){
       document.body.classList.add('bridge-with-inline');
       document.body.insertBefore(bar, document.body.firstChild);
     } else {

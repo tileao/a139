@@ -6,17 +6,17 @@
   <title>AW139 Companion - ADC Module v14</title>
   <style>
     :root {
-      --bg: #08121f;
-      --bg2: #0d1b2b;
-      --panel: rgba(11, 22, 35, 0.92);
-      --panel-2: rgba(14, 28, 45, 0.86);
+      --bg: #0B1220;
+      --bg2: #111827;
+      --panel: rgba(30, 41, 59, 0.96);
+      --panel-2: rgba(36, 52, 71, 0.96);
       --line: rgba(148, 163, 184, 0.18);
       --line-2: rgba(148, 163, 184, 0.10);
       --text: #e5eef8;
       --muted: #97a7bb;
-      --accent: #20b8ff;
-      --accent-2: #0a84ff;
-      --ok: #7CFC00;
+      --accent: #2FA7A0;
+      --accent-2: #46C2BA;
+      --ok: #62FF9C;
       --bad: #ef4444;
       --warn: #f59e0b;
       --gate: #f59e0b;
@@ -354,9 +354,44 @@
       .grid2, .grid3, .metrics, .split-note { grid-template-columns: 1fr; }
       .shell { padding: 10px; gap: 10px; }
     }
+  
+    .topbar{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#243447;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:10px 12px;box-shadow:0 18px 40px rgba(0,0,0,.28);margin:12px 16px 0}
+    .topbar-left,.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .product-tag{display:flex;align-items:center;gap:10px;padding-left:0}
+    .product-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#1E293B;color:#E5EEF7;font-size:20px}
+    .product-line{font-size:13px;letter-spacing:.04em;color:#E5EEF7;opacity:.92;text-transform:uppercase}
+    .product-sub{font-size:20px;line-height:1.05;font-weight:300;letter-spacing:.02em}
+    body{display:grid;grid-template-rows:auto 1fr}
+    .shell{padding-top:12px;grid-template-columns:370px 1fr;gap:12px}
+    .pane{border-radius:0;background:linear-gradient(180deg, #1E293B, #243447)}
+    .left{background:#1E293B}
+    .right{background:#111827}
+    .hero{padding:14px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);background:#1E293B}
+    .eyebrow{color:#E5EEF7;opacity:.85}.sub{color:#A9B8C8}
+    .card{border-radius:0;background:linear-gradient(180deg, rgba(36,52,71,.98), rgba(30,41,59,.98));padding:12px}
+    label{font-size:10px;color:#E5EEF7;opacity:.86;line-height:1.1;margin-bottom:4px}
+    input,select,textarea{min-height:38px;padding:0 10px;border-radius:8px;background:#243447;border-color:rgba(47,167,160,.55);font-size:14px}
+    textarea{padding:10px;min-height:110px}
+    .btn-row button{height:38px;border-radius:8px}.btn-row button.primary{height:42px;border-radius:10px}
+    .step{border-radius:10px;width:24px;min-width:24px;height:24px;box-shadow:none;background:linear-gradient(180deg,var(--accent-2),var(--accent))}
+    .metric,.chip,table{border-radius:10px}.viz-head{padding:14px;background:#243447;border-bottom:1px solid rgba(255,255,255,.08)}
+    .viz-wrap{display:flex;align-items:flex-start;justify-content:center;background:#111827}
+    @media (max-width: 640px){.topbar{margin:8px 8px 0}.product-sub{font-size:16px}.shell{grid-template-columns:1fr;padding:8px}}
   </style>
 </head>
 <body>
+  <header class="topbar module-topbar">
+    <div class="topbar-left">
+      <div class="product-tag no-sep">
+        <div class="product-icon">⛭</div>
+        <div>
+          <div class="product-line">AW139 Companion</div>
+          <div class="product-sub">ADC / Runway Feasibility</div>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right"></div>
+  </header>
   <div class="shell">
     <aside class="pane left">
       <div class="hero">

@@ -375,7 +375,7 @@ function applyUnifiedChartView(doc, mode) {
       body{overflow:hidden}
       main.app-shell{padding:0!important;display:block!important}
       #chartPanel{display:block!important;padding:0!important;margin:0!important}
-      .card-title-row,.toolbar-row,.legend,#chartHint,#chartReference,.hero,.form-card,.status,.interp-box,#interpSection,.top-embed-bar,.back-chip,.home-chip{display:none!important}
+      .card-title-row,.toolbar-row,.legend,#chartHint,#chartReference,.hero,.topbar,.form-card,.status,.interp-box,#interpSection,.top-embed-bar,.back-chip,.home-chip{display:none!important}
       .chart-stage{margin:0!important;height:100vh!important;display:flex;align-items:flex-start;justify-content:flex-start;overflow:auto;background:#000!important;border-radius:0!important;padding:0!important}
       #chartBaseImage,#chartCanvas{max-width:100%;height:auto;flex:0 0 auto;display:block}
     `;
@@ -402,7 +402,7 @@ function applyUnifiedChartView(doc, mode) {
       body{overflow:hidden}
       main.app-shell{padding:0!important;display:block!important}
       #chartPanel{display:block!important;padding:0!important;margin:0!important}
-      .card-title-row,.toolbar-row,.legend,#chartHint,#chartReference,.hero,.form-card,.status,.compact,#interpSection,.pill,.top-embed-bar,.back-chip,.home-chip{display:none!important}
+      .card-title-row,.toolbar-row,.legend,#chartHint,#chartReference,.hero,.topbar,.form-card,.status,.compact,#interpSection,.pill,.top-embed-bar,.back-chip,.home-chip{display:none!important}
       .chart-stage{margin:0!important;height:100vh!important;display:flex;align-items:flex-start;justify-content:flex-start;overflow:auto;background:#000!important;border-radius:0!important;cursor:zoom-in;padding:0!important}
       #chartCanvas{max-width:100%;height:auto;flex:0 0 auto;display:block}
     `;
@@ -420,7 +420,7 @@ function applyUnifiedChartView(doc, mode) {
       .shell{padding:0!important;gap:0!important;grid-template-columns:1fr!important;min-height:100%!important}
       .left{display:none!important}
       .right{border:0!important;border-radius:0!important;box-shadow:none!important;min-height:100%!important;background:#000!important}
-      .viz-head,.legend,.capture-banner,.top-embed-bar,.back-chip,.home-chip{display:none!important}
+      .viz-head,.legend,.capture-banner,.topbar,.top-embed-bar,.back-chip,.home-chip{display:none!important}
       .viz-wrap{min-height:100vh!important;height:100vh!important;background:#000!important;cursor:zoom-in;display:flex;align-items:flex-start;justify-content:flex-start;overflow:auto}
       #vizCanvas{width:auto!important;height:auto!important;max-width:100%!important;max-height:none!important;background:#000!important;flex:0 0 auto;display:block}
       .chart-close{display:none!important}
