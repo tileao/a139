@@ -1383,6 +1383,14 @@ function drawRunwayOverlay(base, a) {
       drawThresholdMarkers(base);
       base.runway.intersections.forEach(it => drawIntersection(base, it));
       drawSelectedGuide(base);
+      if (EMBED_MODE) {
+        try {
+          window.__cataEmbedDataUrl = canvas.toDataURL('image/png');
+          window.__cataEmbedReady = true;
+        } catch (err) {
+          window.__cataEmbedReady = false;
+        }
+      }
     }
 
     function exportGeometryObject() {
