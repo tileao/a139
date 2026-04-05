@@ -9,6 +9,7 @@
   function saveCtx(ctx){ localStorage.setItem(KEY, JSON.stringify({...loadCtx(), ...ctx, updatedAt:new Date().toISOString(), lastModule:mod})); }
   function num(v){ if(v==null) return null; const s=String(v).replace(',', '.').trim(); if(!s) return null; const n=Number(s); return Number.isFinite(n)?n:null; }
   function setIf(id,val){ const el=document.getElementById(id); if(!el || val==null || val==='') return; el.value=val; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); }
+  function setRadio(name,val){ if(val==null || val==='') return; const el=document.querySelector(`input[name="${name}"][value="${val}"]`); if(!el) return; el.checked=true; el.dispatchEvent(new Event('change',{bubbles:true})); }
   function getIf(id){ const el=document.getElementById(id); return el?el.value:null; }
   function mapRtoConfig(v){ return ({standard:'standard', eaps_off:'eapsOff', eaps_on:'eapsOn', ibf:'ibfInstalled'})[v] || v || 'standard'; }
   function applyContext(){
@@ -20,6 +21,7 @@
       setIf('headwind', ctx.headwindKt);
     }
     if(mod==='wat'){
+      setRadio('aircraftSet', ctx.cataAircraftSet || '6800');
       setIf('procedure', ctx.cataProcedure || 'clear');
       setIf('configuration', ctx.cataConfiguration || 'standard');
     }
@@ -40,6 +42,7 @@
         oatC:num(getIf('oat')),
         weightKg:num(getIf('actualWeight')),
         headwindKt:num(getIf('headwind')),
+        cataAircraftSet:(document.querySelector('input[name="aircraftSet"]:checked')||{}).value||'6800',
         cataProcedure:getIf('procedure'),
         cataConfiguration:getIf('configuration'),
         watMaxWeightKg:num((document.getElementById('maxWeight')||{}).textContent?.replace(/[^0-9.-]/g,'')),
