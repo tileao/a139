@@ -7,6 +7,7 @@ const frameMap = { adc: adcFrame, wat: watFrame, rto: rtoFrame };
 const els = {
   base: document.getElementById('baseSelect'),
   departure: document.getElementById('departureEndSelect'),
+  aircraftSet: document.getElementById('aircraftSetSelect'),
   config: document.getElementById('configurationSelect'),
   pa: document.getElementById('pressureAltitude'),
   paNegativeBtn: document.getElementById('paNegativeBtn'),
@@ -48,6 +49,13 @@ function setField(doc, id, value) {
   if (!el) return false;
   el.value = value ?? '';
   el.dispatchEvent(new Event('input', { bubbles: true }));
+  el.dispatchEvent(new Event('change', { bubbles: true }));
+  return true;
+}
+function setRadio(doc, name, value) {
+  const el = doc.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (!el) return false;
+  el.checked = true;
   el.dispatchEvent(new Event('change', { bubbles: true }));
   return true;
 }
@@ -163,6 +171,7 @@ function collectInputs() {
   return {
     base: els.base.value,
     departureEnd: els.departure.value,
+    aircraftSet: els.aircraftSet.value || '6800',
     configuration: els.config.value,
     pressureAltitudeFt: Number(els.pa.value || 0),
     oatC: Number(els.oat.value || 0),
@@ -190,6 +199,7 @@ function restoreInputsFromContext() {
   const ctx = loadCtx();
   if (ctx.adcBase) els.base.value = ctx.adcBase;
   if (ctx.adcDepartureEnd) els.departure.value = ctx.adcDepartureEnd;
+  if (ctx.cataAircraftSet) els.aircraftSet.value = ctx.cataAircraftSet;
   if (ctx.cataConfiguration) els.config.value = ctx.cataConfiguration;
   if (ctx.pressureAltitudeFt != null) els.pa.value = String(ctx.pressureAltitudeFt);
   if (ctx.oatC != null) els.oat.value = String(ctx.oatC);
@@ -200,9 +210,10 @@ function restoreInputsFromContext() {
 
 async function runWAT(input) {
   const doc = await waitForIframe(watFrame, ['procedure', 'configuration', 'pressureAltitude', 'oat', 'actualWeight', 'headwind', 'runBtn', 'maxWeight', 'margin']);
+  setRadio(doc, 'aircraftSet', input.aircraftSet || '6800');
   setField(doc, 'procedure', 'clear');
   setField(doc, 'configuration', input.configuration);
-  await sleep(250);
+  await sleep(350);
   setField(doc, 'pressureAltitude', input.pressureAltitudeFt);
   setField(doc, 'oat', input.oatC);
   setField(doc, 'actualWeight', input.weightKg);
@@ -847,7 +858,8 @@ function setVisualization(mode, forceShow = true) {
 function setupAutoAdvance() {
   const rules = [
     { el: els.base, next: els.departure },
-    { el: els.departure, next: els.config },
+    { el: els.departure, next: els.aircraftSet },
+    { el: els.aircraftSet, next: els.config },
     { el: els.config, next: els.visualSelect },
     { el: els.visualSelect, next: els.pa },
     { el: els.pa, next: els.oat, minDigits: 3, maxDigits: 5 },

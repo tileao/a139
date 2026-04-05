@@ -44,6 +44,7 @@ button,input,select{font:inherit}
 .form-grid{display:grid;gap:8px;margin-bottom:8px}
 .form-grid-2{grid-template-columns:1fr 1fr}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field.full-span{grid-column:1 / -1}
 .field span{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#E5EEF7;opacity:.86;line-height:1.1}
 .field input,.field select{height:38px;min-width:0;width:100%;border-radius:8px;border:1px solid rgba(47,167,160,.55);background:#243447;color:var(--text);padding:0 10px;outline:none;font-size:14px}
 .field input:focus,.field select:focus{border-color:var(--accent-2);box-shadow:0 0 0 3px rgba(47,167,160,.18)}
