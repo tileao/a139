@@ -37,6 +37,7 @@ const els = {
   vizLegend: document.getElementById('vizLegend'),
   vizFacts: document.getElementById('vizFacts'),
   vizPreviewCanvas: document.getElementById('vizPreviewCanvas'),
+  vizWrap: document.getElementById('vizWrap'),
 };
 
 function loadCtx() { try { return JSON.parse(localStorage.getItem(SHARED_KEY) || '{}'); } catch { return {}; } }
@@ -183,6 +184,18 @@ function pushSharedContext(input, patch = {}) {
     ...patch
   };
   saveCtx(merged);
+}
+
+function restoreInputsFromContext() {
+  const ctx = loadCtx();
+  if (ctx.adcBase) els.base.value = ctx.adcBase;
+  if (ctx.adcDepartureEnd) els.departure.value = ctx.adcDepartureEnd;
+  if (ctx.cataConfiguration) els.config.value = ctx.cataConfiguration;
+  if (ctx.pressureAltitudeFt != null) els.pa.value = String(ctx.pressureAltitudeFt);
+  if (ctx.oatC != null) els.oat.value = String(ctx.oatC);
+  if (ctx.weightKg != null) els.weight.value = String(ctx.weightKg);
+  if (ctx.headwindKt != null) els.wind.value = String(ctx.headwindKt);
+  if (ctx.cataVizMode) els.visualSelect.value = ctx.cataVizMode;
 }
 
 async function runWAT(input) {
@@ -612,25 +625,40 @@ function getCanvasCrop(source) {
   return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
 }
 
+function syncViewerStageHeight(px = null) {
+  if (!els.vizWrap) return;
+  if (px == null) {
+    els.vizWrap.style.height = '';
+    els.vizWrap.style.minHeight = '';
+    return;
+  }
+  const h = Math.max(120, Math.round(px));
+  els.vizWrap.style.height = `${h}px`;
+  els.vizWrap.style.minHeight = `${h}px`;
+}
+
 function renderPreview(mode) {
   const source = getSourceCanvas(mode);
   const out = els.vizPreviewCanvas;
   if (!source) {
     out.hidden = true;
+    syncViewerStageHeight(null);
     return false;
   }
   const crop = getCanvasCrop(source);
   const stageWidth = Math.max(320, els.viewerPane.getBoundingClientRect().width - 2);
   const scale = stageWidth / crop.w;
+  const displayHeight = Math.round(crop.h * scale);
   out.width = crop.w;
   out.height = crop.h;
   out.style.width = stageWidth + 'px';
-  out.style.height = Math.round(crop.h * scale) + 'px';
+  out.style.height = displayHeight + 'px';
   const ctx = out.getContext('2d');
   ctx.clearRect(0,0,out.width,out.height);
   ctx.drawImage(source, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
   out.hidden = false;
   out.dataset.mode = mode;
+  syncViewerStageHeight(displayHeight);
   return true;
 }
 
@@ -653,8 +681,10 @@ function clearVisualization() {
   els.viewerPane.classList.add('is-empty');
   els.vizPlaceholder.hidden = false;
   els.vizPreviewCanvas.hidden = true;
+  syncViewerStageHeight(null);
   els.vizSubtitle.textContent = mapVizLabel('');
   els.visualSelect.value = '';
+  saveCtx({ cataVizMode: '' });
   renderVisualizationMeta('');
 }
 
@@ -762,6 +792,7 @@ function setVisualization(mode, forceShow = true) {
   Object.entries(frameMap).forEach(([key, frame]) => frame.classList.toggle('active', key === mode));
   document.querySelectorAll('.viewer-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.viz === mode));
   els.visualSelect.value = mode;
+  saveCtx({ cataVizMode: mode });
   els.vizSubtitle.textContent = mapVizLabel(mode);
   renderVisualizationMeta(mode);
   prepareEmbeddedView(mode).then(async () => {
@@ -854,6 +885,7 @@ function bindEvents() {
     location.href = '../adc/?back=1&return=' + encodeURIComponent('../cata/');
   });
   els.sidebarToggleBtn.addEventListener('click', () => setSidebarCollapsed());
+  els.vizPreviewCanvas.addEventListener('click', () => { const mode = els.vizPreviewCanvas.dataset.mode || els.visualSelect.value; if (mode) openFullscreenChart(mode); });
   fullscreenEls.close.addEventListener('click', (event) => {
     event.stopPropagation();
     closeFullscreenChart();
@@ -936,7 +968,9 @@ window.addEventListener('load', async () => {
       waitForIframe(rtoFrame, ['configuration', 'runBtn'])
     ]);
     await populateBaseOptions();
+    restoreInputsFromContext();
     await Promise.all([prepareEmbeddedView('adc'), prepareEmbeddedView('wat'), prepareEmbeddedView('rto')]);
+    if (els.visualSelect.value) setVisualization(els.visualSelect.value, true);
   } catch (error) {
     console.error('Falha ao inicializar integração', error);
   }
