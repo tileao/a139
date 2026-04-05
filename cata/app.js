@@ -285,8 +285,9 @@ function renderResults(wat, rto, adc) {
   const decisionRows = adc?.rows || [];
   const watOk = wat?.marginKg != null ? wat.marginKg >= 0 : false;
   const badPoints = decisionRows.filter(row => !row.go).map(row => row.point);
-  const runwayOk = decisionRows.length ? badPoints.length === 0 : false;
-  const overallOk = watOk && runwayOk;
+  const fullRunwayRow = decisionRows.find(row => /^(full|pista|full length)$/i.test(String(row.point || '').trim()));
+  const runwayToraOk = fullRunwayRow ? fullRunwayRow.go : false;
+  const overallOk = watOk && runwayToraOk;
 
   els.watMax.textContent = wat?.maxText || '—';
   els.rtoMetric.textContent = rto?.metricText || '—';
@@ -304,16 +305,18 @@ function renderResults(wat, rto, adc) {
 
   if (!decisionRows.length) {
     els.rtoSummary.textContent = rto?.summary || 'Sem cálculo ainda.';
-  } else if (runwayOk) {
-    els.rtoSummary.textContent = 'GO — todos os pontos da pista estão OK.';
+  } else if (runwayToraOk) {
+    els.rtoSummary.textContent = badPoints.length
+      ? `GO — pista comporta o RTO. Restrição por ponto: ${badPoints.join(', ')}.`
+      : 'GO — pista comporta o RTO em toda a extensão.';
   } else {
-    els.rtoSummary.textContent = `NO GO — item negativo: ${badPoints.join(', ')}.`;
+    els.rtoSummary.textContent = 'NO GO — item negativo: RTO maior que a TORA da pista.';
   }
 
   els.watBox.classList.remove('ok', 'bad');
   els.rtoBox.classList.remove('ok', 'bad');
   if (wat?.marginKg != null) els.watBox.classList.add(watOk ? 'ok' : 'bad');
-  if (decisionRows.length) els.rtoBox.classList.add(runwayOk ? 'ok' : 'bad');
+  if (decisionRows.length) els.rtoBox.classList.add(runwayToraOk ? 'ok' : 'bad');
 
   els.statusChip.textContent = overallOk ? 'OK para decolagem' : 'NO GO / revisar limites';
   els.statusChip.className = 'status-chip ' + (overallOk ? 'ok' : 'bad');
