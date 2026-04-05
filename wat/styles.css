@@ -138,3 +138,18 @@ label span,.label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;c
 .card-title-row h2{font-size:24px;font-weight:300}.pill{background:#243447}.status-main{align-items:stretch}.metrics{min-width:0}.metric{border-radius:10px;background:#243447}.status h2{font-size:21px}.metric strong{font-size:22px}.status-badge{font-weight:900}
 @media (max-width: 900px){.app-shell{grid-template-columns:360px 1fr}}
 @media (max-width: 640px){.app-shell{grid-template-columns:1fr;grid-template-areas:"top" "sidebar" "result" "viewer" "notes";padding:8px}.topbar{padding:10px}.product-sub{font-size:16px}.form-card,#statusCard,#visualCard,#notesCard{border-radius:0}.form-grid-2,.result-grid,.action-row{grid-template-columns:1fr}}
+
+
+@media (max-width: 640px){
+  input,select{min-height:34px;height:34px;padding:0 9px;font-size:13px;border-radius:7px;}
+  .small{height:34px;padding:0 10px;border-radius:7px;}
+  .action-row .primary{height:38px;border-radius:8px;}
+  .action-row .ghost,.action-row .small{height:34px;border-radius:7px;}
+  .compact-field input{min-height:34px;height:34px;padding:0 9px;font-size:13px;}
+  .sign-toggle{height:34px;min-height:34px;width:34px;min-width:34px;max-width:34px;border-radius:7px;font-size:20px;}
+  .card{padding:10px;}
+  .card-title-row{margin-bottom:10px;}
+  h2{font-size:18px;}
+  label span,.label{font-size:9px;margin-bottom:4px;}
+  .product-sub{font-size:15px;}
+}

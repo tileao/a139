@@ -107,14 +107,28 @@ body.fullscreen-body{overflow:hidden}
   .viewer-pane{min-height:72vh}
 }
 @media (max-width: 640px){
-  .workspace{grid-template-columns:1fr;grid-template-areas:"viewer" "sidebar"}
-  .viewer-pane{grid-area:viewer;min-height:52vh}
+  .workspace{grid-template-columns:1fr;grid-template-areas:"sidebar" "viewer"}
+  .viewer-pane{grid-area:viewer;min-height:48vh}
   .sidebar{grid-area:sidebar}
-  .cockpit-shell{padding:8px}
-  .topbar{padding:10px}
+  .cockpit-shell{padding:8px;gap:8px}
+  .topbar{padding:8px 10px;border-radius:14px}
   .product-sub{font-size:16px}
-  .panel{padding:12px}
+  .panel{padding:10px}
+  .panel h1{font-size:22px}
+  .panel h2{font-size:20px}
+  .section-label{margin:10px 0 4px}
   .form-grid-2,.result-grid,.action-row{grid-template-columns:1fr}
+  .field span{font-size:9px}
+  .field input,.field select{height:34px;padding:0 9px;font-size:13px;border-radius:7px}
+  .sign-toggle{width:34px;height:34px;flex:0 0 34px;border-radius:7px;font-size:20px}
+  .run-btn{height:38px;border-radius:8px}
+  .action-row .ghost-btn{height:34px;border-radius:7px}
+  .result-box{min-height:84px;padding:9px}
+  .result-value{font-size:26px}
+  .result-sub{font-size:11px;min-height:20px}
+  .decision-table th,.decision-table td{padding:8px;font-size:12px}
+  .viewer-header{padding:10px}
+  .viewer-title{font-size:16px}
   .viewer-tabs{width:100%}
-  .viewer-tab{flex:1}
+  .viewer-tab{flex:1;height:36px;border-radius:8px}
 }

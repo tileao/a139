@@ -1138,3 +1138,18 @@ label span,.label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;c
 .small{height:38px;padding:0 12px;border-radius:8px}.action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.action-row-main .primary,.action-row-main .ghost{height:42px;border-radius:10px}.input-with-toggle{grid-template-columns:38px 1fr}.sign-toggle{height:38px;min-height:38px;border-radius:8px;font-size:22px}.metric{border-radius:10px;background:#243447}.status-summary h2{font-size:21px}.result-main strong{font-size:30px}.status-badge{font-weight:900}
 @media (max-width: 900px){.app-shell{grid-template-columns:360px 1fr}}
 @media (max-width: 640px){.app-shell{grid-template-columns:1fr;grid-template-areas:"top" "sidebar" "result" "viewer" "notes";padding:8px}.topbar{padding:10px}.product-sub{font-size:16px}#formSection,#statusCard,#visualCard,#interpSection{border-radius:0}}
+
+
+@media (max-width: 640px){
+  input,select{min-height:34px;height:34px;padding:0 9px;font-size:13px;border-radius:7px;}
+  .small{height:34px;padding:0 10px;border-radius:7px;}
+  .action-row .primary{height:38px;border-radius:8px;}
+  .action-row .ghost,.action-row .small{height:34px;border-radius:7px;}
+  .compact-field input{min-height:34px;height:34px;padding:0 9px;font-size:13px;}
+  .sign-toggle{height:34px;min-height:34px;width:34px;min-width:34px;max-width:34px;border-radius:7px;font-size:20px;}
+  .card{padding:10px;}
+  .card-title-row{margin-bottom:10px;}
+  h2{font-size:18px;}
+  label span,.label{font-size:9px;margin-bottom:4px;}
+  .product-sub{font-size:15px;}
+}
