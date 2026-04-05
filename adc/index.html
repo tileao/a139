@@ -679,7 +679,15 @@
       state.scale = fit.scale;
       state.offsetX = fit.offsetX;
       state.offsetY = fit.offsetY;
-      if (EMBED_MODE) window.__cataEmbedContentHeight = Math.ceil(targetHeight);
+      if (EMBED_MODE) {
+        window.__cataEmbedContentHeight = Math.ceil(targetHeight);
+        window.__cataEmbedSourceRect = {
+          x: Math.max(0, Math.round(state.offsetX * dpr)),
+          y: Math.max(0, Math.round(state.offsetY * dpr)),
+          w: Math.max(1, Math.round(fit.drawWidth * dpr)),
+          h: Math.max(1, Math.round(fit.drawHeight * dpr))
+        };
+      }
       draw();
     }
 

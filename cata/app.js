@@ -593,8 +593,14 @@ function getSourceCanvas(mode) {
   return null;
 }
 
-function getCanvasCrop(source) {
+function getCanvasCrop(source, mode = '') {
   if (!source) return null;
+  try {
+    if (mode === 'adc') {
+      const rect = adcFrame.contentWindow?.__cataEmbedSourceRect;
+      if (rect && rect.w > 0 && rect.h > 0) return rect;
+    }
+  } catch {}
   const tmp = document.createElement('canvas');
   tmp.width = source.width;
   tmp.height = source.height;
@@ -608,8 +614,7 @@ function getCanvasCrop(source) {
       const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
       if (a < 8) continue;
       const isDarkBg = (r < 20 && g < 30 && b < 45);
-      const isLightBg = (r > 248 && g > 248 && b > 248);
-      if (isDarkBg || isLightBg) continue;
+      if (isDarkBg) continue;
       if (x < minX) minX = x;
       if (y < minY) minY = y;
       if (x > maxX) maxX = x;
@@ -617,7 +622,7 @@ function getCanvasCrop(source) {
     }
   }
   if (maxX < 0 || maxY < 0) return { x: 0, y: 0, w: tmp.width, h: tmp.height };
-  const pad = 28;
+  const pad = 12;
   minX = Math.max(0, minX - pad);
   minY = Math.max(0, minY - pad);
   maxX = Math.min(tmp.width - 1, maxX + pad);
@@ -645,7 +650,7 @@ function renderPreview(mode) {
     syncViewerStageHeight(null);
     return false;
   }
-  const crop = getCanvasCrop(source);
+  const crop = getCanvasCrop(source, mode);
   const stageWidth = Math.max(320, els.viewerPane.getBoundingClientRect().width - 2);
   const scale = stageWidth / crop.w;
   const displayHeight = Math.round(crop.h * scale);
@@ -702,7 +707,7 @@ function drawFullscreenSource(mode) {
   const ctx = out.getContext('2d');
   const source = getSourceCanvas(mode);
   if (!source) return false;
-  const crop = getCanvasCrop(source);
+  const crop = getCanvasCrop(source, mode);
   out.width = crop.w;
   out.height = crop.h;
   ctx.clearRect(0,0,out.width,out.height);
