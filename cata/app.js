@@ -48,9 +48,44 @@ function setField(doc, id, value) {
 }
 function clickField(doc, id) { const el = doc.getElementById(id); if (!el) return false; el.click(); return true; }
 function text(doc, id) { return (doc.getElementById(id)?.textContent || '').trim(); }
+function parseLocaleNumber(raw) {
+  const normalized = String(raw || '').trim().replace(/\s+/g, '');
+  if (!normalized) return null;
+  const tokenMatch = normalized.match(/-?[\d.,]+/);
+  if (!tokenMatch) return null;
+  let token = tokenMatch[0];
+
+  const hasDot = token.includes('.');
+  const hasComma = token.includes(',');
+
+  if (hasDot && hasComma) {
+    const lastDot = token.lastIndexOf('.');
+    const lastComma = token.lastIndexOf(',');
+    if (lastComma > lastDot) {
+      token = token.replace(/\./g, '').replace(',', '.');
+    } else {
+      token = token.replace(/,/g, '');
+    }
+  } else if (hasDot) {
+    const parts = token.split('.');
+    if (parts.length > 1 && parts[parts.length - 1].length === 3) {
+      token = parts.join('');
+    }
+  } else if (hasComma) {
+    const parts = token.split(',');
+    if (parts.length > 1 && parts[parts.length - 1].length === 3) {
+      token = parts.join('');
+    } else {
+      token = token.replace(',', '.');
+    }
+  }
+
+  const value = Number(token);
+  return Number.isFinite(value) ? value : null;
+}
+
 function numberFromText(value) {
-  const m = String(value || '').replace(',', '.').match(/-?\d+(?:\.\d+)?/);
-  return m ? Number(m[0]) : null;
+  return parseLocaleNumber(value);
 }
 function mapRtoConfig(config) {
   return ({ standard: 'standard', eaps_off: 'eapsOff', eaps_on: 'eapsOn', ibf: 'ibfInstalled' })[config] || 'standard';
@@ -227,12 +262,16 @@ async function runADC(input, rtoResult) {
 
   const rows = [...doc.querySelectorAll('#decisionTable tr')].map(tr => {
     const tds = tr.querySelectorAll('td');
-    return tds.length >= 4 ? {
+    if (tds.length < 4) return null;
+    const rtoOkText = tds[2].textContent.trim();
+    const decisionText = tds[3].textContent.trim();
+    const go = /^OK$/i.test(rtoOkText) || (/PODE/i.test(decisionText) && !/NÃO PODE|NAO PODE|NO GO/i.test(decisionText));
+    return {
       point: tds[0].textContent.trim(),
-      rtoOk: tds[2].textContent.trim(),
-      decision: tds[3].textContent.trim(),
-      go: /PODE|GO/i.test(tds[3].textContent) && !/NO/i.test(tds[3].textContent)
-    } : null;
+      rtoOk: rtoOkText,
+      decision: decisionText,
+      go
+    };
   }).filter(Boolean);
 
   return {
