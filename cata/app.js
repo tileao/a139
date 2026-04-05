@@ -705,6 +705,16 @@ const fullscreenState = { active: false, scale: 1, minScale: 1, maxScale: 4, x: 
 function drawFullscreenSource(mode) {
   const out = fullscreenEls.canvas;
   const ctx = out.getContext('2d');
+
+  const preview = els.vizPreviewCanvas;
+  if (preview && !preview.hidden && preview.width > 1 && preview.height > 1 && (preview.dataset.mode || els.visualSelect.value) === mode) {
+    out.width = preview.width;
+    out.height = preview.height;
+    ctx.clearRect(0, 0, out.width, out.height);
+    ctx.drawImage(preview, 0, 0, preview.width, preview.height, 0, 0, preview.width, preview.height);
+    return true;
+  }
+
   const source = getSourceCanvas(mode);
   if (!source) return false;
   const crop = getCanvasCrop(source, mode);
