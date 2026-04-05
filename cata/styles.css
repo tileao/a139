@@ -87,7 +87,8 @@ button,input,select{font:inherit}
 .viewer-tab{height:40px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#1a242d;color:#E5EEF7;cursor:pointer}
 .viewer-tab.active{background:#2FA7A0;color:#fff;border-color:#2FA7A0}
 .viewer-stage{position:relative;min-height:0;background:#111827;overflow:hidden;display:block}
-.viz-frame{border:0;width:100%;display:none;background:#111827;height:auto;vertical-align:top}
+.viz-preview-canvas{display:block;width:100%;height:auto;background:#111827;vertical-align:top;cursor:zoom-in}
+.viz-frame{position:absolute;left:-10000px;top:0;width:1px;height:1px;visibility:hidden;pointer-events:none;border:0}
 .viz-frame.active{display:block}
 .viewer-pane.viz-fullscreen{position:fixed;inset:0;z-index:999;background:#111827}
 body.fullscreen-body{overflow:hidden}

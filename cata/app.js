@@ -36,6 +36,7 @@ const els = {
   viewerMeta: document.getElementById('viewerMeta'),
   vizLegend: document.getElementById('vizLegend'),
   vizFacts: document.getElementById('vizFacts'),
+  vizPreviewCanvas: document.getElementById('vizPreviewCanvas'),
 };
 
 function loadCtx() { try { return JSON.parse(localStorage.getItem(SHARED_KEY) || '{}'); } catch { return {}; } }
@@ -225,10 +226,12 @@ async function runRTO(input) {
   if (statusTextEl) statusTextEl.textContent = 'Aguardando nova leitura.';
 
   setField(doc, 'configuration', mapRtoConfig(input.configuration));
-  await sleep(120);
+  await sleep(240);
   try {
     await doc.defaultView?.ensureEffectiveProfileLoaded?.({ preserveInputs: true, autoRun: false });
   } catch {}
+  await sleep(160);
+  try { doc.defaultView?.clearResultsOnly?.(); } catch {}
   setField(doc, 'pressureAltitude', input.pressureAltitudeFt);
   setField(doc, 'oat', input.oatC);
   setField(doc, 'actualWeight', input.weightKg);
@@ -446,8 +449,9 @@ function applyUnifiedChartView(doc, mode) {
       .left{display:none!important}
       .right{display:block!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-height:0!important;height:auto!important;background:#000!important}
       .viz-head,.legend,.capture-banner,.topbar,.top-embed-bar,.back-chip,.home-chip{display:none!important}
-      .viz-wrap{background:#000!important;cursor:zoom-in;display:block!important;overflow:hidden!important;height:auto!important;min-height:0!important;line-height:0}
-      #vizCanvas{width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;background:#000!important;display:block!important}
+      .viz-wrap{background:#000!important;cursor:zoom-in;display:block!important;overflow:hidden!important;height:auto!important;min-height:0!important;line-height:0!important;flex:none!important}
+      #vizCanvas{width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;background:#000!important;display:block!important;vertical-align:top}
+      .right,.shell{height:auto!important;min-height:0!important;align-items:flex-start!important}
       .chart-close{display:none!important}
     `;
     doc.head.appendChild(style);
@@ -566,6 +570,70 @@ function getModeContentHeight(doc, mode) {
   return Math.max(body?.scrollHeight || 0, body?.offsetHeight || 0, html?.scrollHeight || 0, html?.offsetHeight || 0);
 }
 
+
+function getSourceCanvas(mode) {
+  try {
+    if (mode === 'adc') return adcFrame.contentDocument?.getElementById('vizCanvas') || null;
+    if (mode === 'wat') return watFrame.contentDocument?.getElementById('chartCanvas') || null;
+    if (mode === 'rto') return rtoFrame.contentDocument?.getElementById('chartCanvas') || null;
+  } catch {}
+  return null;
+}
+
+function getCanvasCrop(source) {
+  if (!source) return null;
+  const tmp = document.createElement('canvas');
+  tmp.width = source.width;
+  tmp.height = source.height;
+  const tctx = tmp.getContext('2d', { willReadFrequently: true });
+  tctx.drawImage(source, 0, 0);
+  const data = tctx.getImageData(0, 0, tmp.width, tmp.height).data;
+  let minX = tmp.width, minY = tmp.height, maxX = -1, maxY = -1;
+  for (let y = 0; y < tmp.height; y++) {
+    for (let x = 0; x < tmp.width; x++) {
+      const i = (y * tmp.width + x) * 4;
+      const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+      if (a < 8) continue;
+      const isDarkBg = (r < 20 && g < 30 && b < 45);
+      const isLightBg = (r > 248 && g > 248 && b > 248);
+      if (isDarkBg || isLightBg) continue;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < 0 || maxY < 0) return { x: 0, y: 0, w: tmp.width, h: tmp.height };
+  const pad = 28;
+  minX = Math.max(0, minX - pad);
+  minY = Math.max(0, minY - pad);
+  maxX = Math.min(tmp.width - 1, maxX + pad);
+  maxY = Math.min(tmp.height - 1, maxY + pad);
+  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+function renderPreview(mode) {
+  const source = getSourceCanvas(mode);
+  const out = els.vizPreviewCanvas;
+  if (!source) {
+    out.hidden = true;
+    return false;
+  }
+  const crop = getCanvasCrop(source);
+  const stageWidth = Math.max(320, els.viewerPane.getBoundingClientRect().width - 2);
+  const scale = stageWidth / crop.w;
+  out.width = crop.w;
+  out.height = crop.h;
+  out.style.width = stageWidth + 'px';
+  out.style.height = Math.round(crop.h * scale) + 'px';
+  const ctx = out.getContext('2d');
+  ctx.clearRect(0,0,out.width,out.height);
+  ctx.drawImage(source, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
+  out.hidden = false;
+  out.dataset.mode = mode;
+  return true;
+}
+
 function resizeActiveFrame(mode) {
   const frame = frameMap[mode];
   if (!frame) return;
@@ -584,6 +652,7 @@ function clearVisualization() {
   document.querySelectorAll('.viewer-tab').forEach(btn => btn.classList.remove('active'));
   els.viewerPane.classList.add('is-empty');
   els.vizPlaceholder.hidden = false;
+  els.vizPreviewCanvas.hidden = true;
   els.vizSubtitle.textContent = mapVizLabel('');
   els.visualSelect.value = '';
   renderVisualizationMeta('');
@@ -597,46 +666,44 @@ const fullscreenEls = {
 };
 const fullscreenState = { active: false, scale: 1, minScale: 1, maxScale: 4, x: 0, y: 0, startX: 0, startY: 0, dragging: false, moved: false };
 
+
 function drawFullscreenSource(mode) {
   const out = fullscreenEls.canvas;
   const ctx = out.getContext('2d');
-  if (mode === 'adc') {
-    const doc = adcFrame.contentDocument;
-    const src = doc?.getElementById('vizCanvas');
-    if (!src) return false;
-    out.width = src.width || Math.ceil(src.getBoundingClientRect().width) || 1;
-    out.height = src.height || Math.ceil(src.getBoundingClientRect().height) || 1;
-    ctx.clearRect(0,0,out.width,out.height);
-    ctx.drawImage(src,0,0,out.width,out.height);
-    return true;
+  const source = getSourceCanvas(mode);
+  if (!source) return false;
+  const crop = getCanvasCrop(source);
+  out.width = crop.w;
+  out.height = crop.h;
+  ctx.clearRect(0,0,out.width,out.height);
+  ctx.drawImage(source, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
+  return true;
+}
+
+
+function clampFullscreenPan() {
+  const vp = fullscreenEls.viewport;
+  const c = fullscreenEls.canvas;
+  const scaledW = c.width * fullscreenState.scale;
+  const scaledH = c.height * fullscreenState.scale;
+  const minX = Math.min(0, vp.clientWidth - scaledW);
+  const minY = Math.min(0, vp.clientHeight - scaledH);
+  const maxX = Math.max(0, vp.clientWidth - scaledW);
+  const maxY = Math.max(0, vp.clientHeight - scaledH);
+  if (scaledW <= vp.clientWidth) {
+    fullscreenState.x = (vp.clientWidth - scaledW) / 2;
+  } else {
+    fullscreenState.x = Math.min(maxX, Math.max(minX, fullscreenState.x));
   }
-  if (mode === 'rto') {
-    const doc = rtoFrame.contentDocument;
-    const src = doc?.getElementById('chartCanvas');
-    if (!src) return false;
-    out.width = src.width || Math.ceil(src.getBoundingClientRect().width) || 1;
-    out.height = src.height || Math.ceil(src.getBoundingClientRect().height) || 1;
-    ctx.clearRect(0,0,out.width,out.height);
-    ctx.drawImage(src,0,0,out.width,out.height);
-    return true;
+  if (scaledH <= vp.clientHeight) {
+    fullscreenState.y = (vp.clientHeight - scaledH) / 2;
+  } else {
+    fullscreenState.y = Math.min(maxY, Math.max(minY, fullscreenState.y));
   }
-  if (mode === 'wat') {
-    const doc = watFrame.contentDocument;
-    const img = doc?.getElementById('chartBaseImage');
-    const overlay = doc?.getElementById('chartCanvas');
-    if (!img) return false;
-    const w = img.naturalWidth || img.width || Math.ceil(img.getBoundingClientRect().width) || 1;
-    const h = img.naturalHeight || img.height || Math.ceil(img.getBoundingClientRect().height) || 1;
-    out.width = w; out.height = h;
-    ctx.clearRect(0,0,w,h);
-    ctx.drawImage(img,0,0,w,h);
-    if (overlay) ctx.drawImage(overlay,0,0,w,h);
-    return true;
-  }
-  return false;
 }
 
 function applyFullscreenTransform() {
+  clampFullscreenPan();
   fullscreenEls.canvas.style.transform = `translate(${fullscreenState.x}px, ${fullscreenState.y}px) scale(${fullscreenState.scale})`;
 }
 
@@ -651,8 +718,25 @@ function fitFullscreenCanvas() {
   applyFullscreenTransform();
 }
 
+function zoomFullscreen(nextScale, cx = null, cy = null) {
+  const vp = fullscreenEls.viewport;
+  const prevScale = fullscreenState.scale;
+  const clamped = Math.max(fullscreenState.minScale, Math.min(fullscreenState.maxScale, nextScale));
+  if (Math.abs(clamped - prevScale) < 0.001) return;
+  if (cx == null) cx = vp.clientWidth / 2;
+  if (cy == null) cy = vp.clientHeight / 2;
+  const worldX = (cx - fullscreenState.x) / prevScale;
+  const worldY = (cy - fullscreenState.y) / prevScale;
+  fullscreenState.scale = clamped;
+  fullscreenState.x = cx - worldX * clamped;
+  fullscreenState.y = cy - worldY * clamped;
+  applyFullscreenTransform();
+}
+
 function closeFullscreenChart() {
   fullscreenState.active = false;
+  fullscreenState.dragging = false;
+  fullscreenState.moved = false;
   fullscreenEls.overlay.hidden = true;
   document.body.classList.remove('fullscreen-body');
 }
@@ -660,6 +744,7 @@ function closeFullscreenChart() {
 function openFullscreenChart(mode) {
   if (!drawFullscreenSource(mode)) return;
   fullscreenState.active = true;
+  fullscreenState.moved = false;
   fullscreenEls.overlay.hidden = false;
   document.body.classList.add('fullscreen-body');
   fitFullscreenCanvas();
@@ -680,8 +765,8 @@ function setVisualization(mode, forceShow = true) {
   els.vizSubtitle.textContent = mapVizLabel(mode);
   renderVisualizationMeta(mode);
   prepareEmbeddedView(mode).then(async () => {
-    await sleep(80);
-    resizeActiveFrame(mode);
+    await sleep(120);
+    renderPreview(mode);
     renderVisualizationMeta(mode);
   });
 }
@@ -737,8 +822,6 @@ async function runFlow() {
     const adc = await runADC(input, rto);
     renderResults(wat, rto, adc);
     setVisualization(els.visualSelect.value || 'adc');
-    await sleep(120);
-    resizeActiveFrame(els.visualSelect.value || 'adc');
   } catch (error) {
     console.error(error);
     els.statusChip.textContent = 'Erro na integração';
@@ -775,50 +858,67 @@ function bindEvents() {
     event.stopPropagation();
     closeFullscreenChart();
   });
-  fullscreenEls.viewport.addEventListener('click', () => {
+
+  fullscreenEls.viewport.addEventListener('click', (event) => {
+    if (event.target === fullscreenEls.close) return;
     if (fullscreenState.scale <= fullscreenState.minScale + 0.01 && !fullscreenState.moved) closeFullscreenChart();
     fullscreenState.moved = false;
   });
   fullscreenEls.viewport.addEventListener('wheel', (event) => {
     event.preventDefault();
-    const delta = event.deltaY < 0 ? 1.15 : 0.87;
-    fullscreenState.scale = Math.max(fullscreenState.minScale, Math.min(fullscreenState.maxScale, fullscreenState.scale * delta));
-    applyFullscreenTransform();
+    const rect = fullscreenEls.viewport.getBoundingClientRect();
+    const cx = event.clientX - rect.left;
+    const cy = event.clientY - rect.top;
+    const factor = event.deltaY < 0 ? 1.15 : 0.87;
+    zoomFullscreen(fullscreenState.scale * factor, cx, cy);
   }, { passive: false });
   fullscreenEls.viewport.addEventListener('pointerdown', (event) => {
+    if (fullscreenState.scale <= fullscreenState.minScale + 0.01) {
+      fullscreenState.dragging = false;
+      fullscreenState.moved = false;
+      return;
+    }
     fullscreenState.dragging = true;
     fullscreenState.moved = false;
     fullscreenState.startX = event.clientX - fullscreenState.x;
     fullscreenState.startY = event.clientY - fullscreenState.y;
+    fullscreenEls.viewport.setPointerCapture?.(event.pointerId);
   });
   fullscreenEls.viewport.addEventListener('pointermove', (event) => {
-    if (!fullscreenState.dragging || fullscreenState.scale <= fullscreenState.minScale + 0.01) return;
+    if (!fullscreenState.dragging) return;
     fullscreenState.x = event.clientX - fullscreenState.startX;
     fullscreenState.y = event.clientY - fullscreenState.startY;
     fullscreenState.moved = true;
     applyFullscreenTransform();
   });
-  const endDrag = () => { fullscreenState.dragging = false; };
+  const endDrag = (event) => {
+    fullscreenState.dragging = false;
+    if (event?.pointerId != null) fullscreenEls.viewport.releasePointerCapture?.(event.pointerId);
+  };
   fullscreenEls.viewport.addEventListener('pointerup', endDrag);
   fullscreenEls.viewport.addEventListener('pointercancel', endDrag);
   let touchDist = null;
   let touchScale = null;
+  let touchCenter = null;
   fullscreenEls.viewport.addEventListener('touchstart', (event) => {
     if (event.touches.length === 2) {
       const [a,b] = event.touches;
       touchDist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
       touchScale = fullscreenState.scale;
+      const rect = fullscreenEls.viewport.getBoundingClientRect();
+      touchCenter = { x: ((a.clientX+b.clientX)/2)-rect.left, y: ((a.clientY+b.clientY)/2)-rect.top };
+      fullscreenState.moved = true;
     }
   }, { passive: true });
   fullscreenEls.viewport.addEventListener('touchmove', (event) => {
     if (event.touches.length === 2 && touchDist) {
       const [a,b] = event.touches;
       const newDist = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
-      fullscreenState.scale = Math.max(fullscreenState.minScale, Math.min(fullscreenState.maxScale, touchScale * (newDist / touchDist)));
-      applyFullscreenTransform();
+      zoomFullscreen(touchScale * (newDist / touchDist), touchCenter?.x, touchCenter?.y);
+      fullscreenState.moved = true;
     }
   }, { passive: true });
-  fullscreenEls.viewport.addEventListener('touchend', () => { touchDist = null; touchScale = null; });
+  fullscreenEls.viewport.addEventListener('touchend', () => { touchDist = null; touchScale = null; touchCenter = null; });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && fullscreenState.active) closeFullscreenChart();
   });
@@ -837,9 +937,6 @@ window.addEventListener('load', async () => {
     ]);
     await populateBaseOptions();
     await Promise.all([prepareEmbeddedView('adc'), prepareEmbeddedView('wat'), prepareEmbeddedView('rto')]);
-    resizeActiveFrame('adc');
-    resizeActiveFrame('wat');
-    resizeActiveFrame('rto');
   } catch (error) {
     console.error('Falha ao inicializar integração', error);
   }
