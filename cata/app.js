@@ -370,17 +370,17 @@ function applyUnifiedChartView(doc, mode) {
     section.style.margin = '0';
     section.style.border = '0';
     section.style.borderRadius = '0';
-    section.style.background = '#000';
+    section.style.background = '#fff';
     const style = doc.createElement('style');
     style.id = 'cataEmbedStyleUnified';
     style.textContent = `
-      html,body{height:100%;margin:0;background:#000!important}
+      html,body{height:100%;margin:0;background:#fff!important}
       body{overflow:hidden}
       main.app-shell{padding:0!important;display:block!important}
       #chartPanel{display:block!important;padding:0!important;margin:0!important}
       .card-title-row,.toolbar-row,.legend,#chartHint,#chartReference,.hero,.topbar,.form-card,.status,.interp-box,#interpSection,.top-embed-bar,.back-chip,.home-chip{display:none!important}
-      .chart-stage{margin:0!important;display:block!important;overflow:hidden!important;background:#000!important;border-radius:0!important;padding:0!important;height:auto!important;min-height:0!important}
-      #chartBaseImage{display:block!important;width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important}
+      .chart-stage{margin:0!important;display:block!important;overflow:hidden!important;background:#fff!important;border-radius:0!important;padding:0!important;height:auto!important;min-height:0!important}
+      #chartBaseImage{display:block!important;width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;margin:0!important}
       #chartCanvas{width:100%!important;height:auto!important;display:block!important}
     `;
     doc.head.appendChild(style);
@@ -398,16 +398,16 @@ function applyUnifiedChartView(doc, mode) {
     section.style.margin = '0';
     section.style.border = '0';
     section.style.borderRadius = '0';
-    section.style.background = '#000';
+    section.style.background = '#fff';
     const style = doc.createElement('style');
     style.id = 'cataEmbedStyleUnified';
     style.textContent = `
-      html,body{height:100%;margin:0;background:#000!important}
+      html,body{height:100%;margin:0;background:#fff!important}
       body{overflow:hidden}
       main.app-shell{padding:0!important;display:block!important}
       #chartPanel{display:block!important;padding:0!important;margin:0!important}
       .card-title-row,.toolbar-row,.legend,#chartHint,#chartReference,.hero,.topbar,.form-card,.status,.compact,#interpSection,.pill,.top-embed-bar,.back-chip,.home-chip{display:none!important}
-      .chart-stage{margin:0!important;display:block!important;overflow:hidden!important;background:#000!important;border-radius:0!important;cursor:zoom-in;padding:0!important;height:auto!important;min-height:0!important}
+      .chart-stage{margin:0!important;display:block!important;overflow:hidden!important;background:#fff!important;border-radius:0!important;cursor:zoom-in;padding:0!important;height:auto!important;min-height:0!important}
       #chartCanvas{width:100%!important;height:auto!important;max-width:100%!important;display:block!important}
     `;
     doc.head.appendChild(style);
@@ -419,14 +419,14 @@ function applyUnifiedChartView(doc, mode) {
     const style = doc.createElement('style');
     style.id = 'cataEmbedStyleUnified';
     style.textContent = `
-      html,body{height:100%;margin:0;background:#000!important}
+      html,body{height:100%;margin:0;background:#fff!important}
       body{overflow:hidden}
       .shell{padding:0!important;gap:0!important;grid-template-columns:1fr!important;min-height:100%!important}
       .left{display:none!important}
-      .right{border:0!important;border-radius:0!important;box-shadow:none!important;min-height:100%!important;background:#000!important}
+      .right{border:0!important;border-radius:0!important;box-shadow:none!important;min-height:100%!important;background:#fff!important}
       .viz-head,.legend,.capture-banner,.topbar,.top-embed-bar,.back-chip,.home-chip{display:none!important}
-      .viz-wrap{background:#000!important;cursor:zoom-in;display:block!important;overflow:hidden!important;height:auto!important;min-height:0!important}
-      #vizCanvas{width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;background:#000!important;display:block!important}
+      .viz-wrap{background:#fff!important;cursor:zoom-in;display:block!important;overflow:hidden!important;height:auto!important;min-height:0!important}
+      #vizCanvas{width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;background:#fff!important;display:block!important}
       .chart-close{display:none!important}
     `;
     doc.head.appendChild(style);
