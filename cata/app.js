@@ -176,18 +176,28 @@ async function runWAT(input) {
 
 async function runRTO(input) {
   const doc = await waitForIframe(rtoFrame, ['configuration', 'pressureAltitude', 'oat', 'actualWeight', 'headwind', 'runBtn', 'finalMetric']);
+  const metricEl = doc.getElementById('finalMetric');
+  const metricFtEl = doc.getElementById('finalMetricFt');
+  const statusDetailEl = doc.getElementById('statusDetail');
+  const statusTextEl = doc.getElementById('statusText');
+  if (metricEl) metricEl.textContent = '—';
+  if (metricFtEl) metricFtEl.textContent = '—';
+  if (statusDetailEl) statusDetailEl.textContent = 'Recalculando…';
+  if (statusTextEl) statusTextEl.textContent = 'Aguardando nova leitura.';
+
   setField(doc, 'configuration', mapRtoConfig(input.configuration));
-  await sleep(900);
+  await sleep(1100);
   setField(doc, 'pressureAltitude', input.pressureAltitudeFt);
   setField(doc, 'oat', input.oatC);
   setField(doc, 'actualWeight', input.weightKg);
   setField(doc, 'headwind', input.headwindKt);
+  await sleep(80);
   clickField(doc, 'runBtn');
 
   const metricText = await waitForTruthy(() => {
     const t = text(doc, 'finalMetric');
     return /\d/.test(t) && t !== '—' ? t : null;
-  }, 6000);
+  }, 7000);
   const summary = text(doc, 'statusDetail') || text(doc, 'statusText');
   const result = {
     metricText: metricText || text(doc, 'finalMetric'),
@@ -200,12 +210,20 @@ async function runRTO(input) {
 
 async function runADC(input, rtoResult) {
   const doc = await waitForIframe(adcFrame, ['baseSelect', 'departureEndSelect', 'rtoInput', 'analyzeBtn', 'decisionTable']);
+  const table = doc.getElementById('decisionTable');
+  const gateMetric = doc.getElementById('gateMetric');
+  const fullMetric = doc.getElementById('fullLengthMetric');
+  if (table) table.innerHTML = '';
+  if (gateMetric) gateMetric.textContent = '—';
+  if (fullMetric) fullMetric.textContent = '—';
+
   setField(doc, 'baseSelect', input.base);
   await sleep(120);
   setField(doc, 'departureEndSelect', input.departureEnd);
   if (rtoResult?.rtoMeters != null) setField(doc, 'rtoInput', rtoResult.rtoMeters);
+  await sleep(60);
   clickField(doc, 'analyzeBtn');
-  await waitForTruthy(() => doc.querySelectorAll('#decisionTable tr').length > 0, 4000);
+  await waitForTruthy(() => doc.querySelectorAll('#decisionTable tr').length > 0, 4500);
 
   const rows = [...doc.querySelectorAll('#decisionTable tr')].map(tr => {
     const tds = tr.querySelectorAll('td');
