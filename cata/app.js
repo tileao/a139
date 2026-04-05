@@ -33,6 +33,9 @@ const els = {
   openADCBtn: document.getElementById('openADCBtn'),
   viewerPane: document.getElementById('viewerPane'),
   sidebarToggleBtn: document.getElementById('sidebarToggleBtn'),
+  viewerMeta: document.getElementById('viewerMeta'),
+  vizLegend: document.getElementById('vizLegend'),
+  vizFacts: document.getElementById('vizFacts'),
 };
 
 function loadCtx() { try { return JSON.parse(localStorage.getItem(SHARED_KEY) || '{}'); } catch { return {}; } }
@@ -434,9 +437,93 @@ async function prepareEmbeddedView(mode) {
   try {
     const doc = await waitForIframe(frameMap[mode]);
     applyUnifiedChartView(doc, mode);
+    return doc;
   } catch (error) {
     console.warn('Falha ao preparar visualização', mode, error);
+    return null;
   }
+}
+
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;' }[ch]));
+}
+
+function parseReferenceHtml(html) {
+  if (!html) return [];
+  const lines = String(html).split(/<br\s*\/?>(?:\s*)/i).map(line => line.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+  return lines.map(line => {
+    const idx = line.indexOf(':');
+    if (idx > -1) return { label: line.slice(0, idx).trim(), value: line.slice(idx + 1).trim() };
+    return { label: 'Info', value: line.trim() };
+  });
+}
+
+function getLegendForMode(mode) {
+  if (mode === 'wat') return [
+    { color: '#ffffff', label: 'Max weight interpolado' },
+    { color: '#52a8ff', label: 'Peso atual' },
+    { color: '#62FF9C', label: 'Dentro' },
+    { color: '#FF4040', label: 'Fora' },
+  ];
+  if (mode === 'rto') return [
+    { color: '#f3b447', label: 'PA / curvas OAT usadas' },
+    { color: '#3dd9ff', label: 'Transferência' },
+    { color: '#62FF9C', label: 'Curvas de peso usadas' },
+    { color: '#ff66cc', label: 'Correction / Reference line' },
+  ];
+  if (mode === 'adc') return [
+    { color: '#7CFC00', label: 'OK / disponível' },
+    { color: '#ef4444', label: 'Não OK' },
+    { color: '#f59e0b', label: 'Gate operacional' },
+  ];
+  return [];
+}
+
+function getVisualizationMeta(mode) {
+  if (!mode) return { legend: [], facts: [] };
+  if (mode === 'adc') {
+    const baseDef = baseLibrary?.[els.base.value];
+    const dep = els.departure.value;
+    return {
+      legend: getLegendForMode('adc'),
+      facts: [
+        { label: 'Gráfico', value: `ADC ${baseDef?.id || ''}`.trim() },
+        { label: 'Página', value: 'Page 1' },
+        { label: 'Base', value: baseDef ? `${baseDef.id} — ${baseDef.name}` : (els.base.options[els.base.selectedIndex]?.text || '—') },
+        { label: 'Cabeceira', value: dep || '—' },
+      ]
+    };
+  }
+
+  const frame = frameMap[mode];
+  const doc = frame?.contentDocument;
+  const refHtml = doc?.getElementById('chartReference')?.innerHTML || '';
+  const facts = parseReferenceHtml(refHtml);
+  return {
+    legend: getLegendForMode(mode),
+    facts
+  };
+}
+
+function renderVisualizationMeta(mode) {
+  const meta = getVisualizationMeta(mode);
+  if (!mode) {
+    els.viewerMeta.hidden = true;
+    els.vizLegend.innerHTML = '';
+    els.vizFacts.innerHTML = '';
+    return;
+  }
+  els.viewerMeta.hidden = false;
+  els.vizLegend.innerHTML = (meta.legend || []).map(item => `
+    <span class="viz-legend-item"><span class="viz-swatch" style="background:${escapeHtml(item.color)}"></span>${escapeHtml(item.label)}</span>
+  `).join('');
+  els.vizFacts.innerHTML = (meta.facts || []).map(item => `
+    <div class="viz-fact">
+      <span class="viz-fact-label">${escapeHtml(item.label)}</span>
+      <span class="viz-fact-value">${escapeHtml(item.value)}</span>
+    </div>
+  `).join('');
 }
 
 function clearVisualization() {
@@ -446,6 +533,7 @@ function clearVisualization() {
   els.vizPlaceholder.hidden = false;
   els.vizSubtitle.textContent = mapVizLabel('');
   els.visualSelect.value = '';
+  renderVisualizationMeta('');
 }
 
 function setVisualization(mode, forceShow = true) {
@@ -461,7 +549,8 @@ function setVisualization(mode, forceShow = true) {
   document.querySelectorAll('.viewer-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.viz === mode));
   els.visualSelect.value = mode;
   els.vizSubtitle.textContent = mapVizLabel(mode);
-  prepareEmbeddedView(mode);
+  renderVisualizationMeta(mode);
+  prepareEmbeddedView(mode).then(() => renderVisualizationMeta(mode));
 }
 
 function setupAutoAdvance() {
