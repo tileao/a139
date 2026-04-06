@@ -656,33 +656,12 @@ function syncViewerStageHeight(px = null) {
 function renderPreview(mode) {
   const out = els.vizPreviewCanvas;
 
-  if (mode === 'adc') {
-    try {
-      const w = adcFrame.contentWindow;
-      const dataUrl = w?.__cataEmbedDataUrl;
-      if (dataUrl) {
-        const img = new Image();
-        img.onload = () => {
-          const stageWidth = Math.max(320, els.viewerPane.getBoundingClientRect().width - 2);
-          const displayHeight = Math.round((img.height / img.width) * stageWidth);
-          out.width = img.width;
-          out.height = img.height;
-          out.style.width = stageWidth + 'px';
-          out.style.height = displayHeight + 'px';
-          const ctx = out.getContext('2d');
-          ctx.clearRect(0, 0, out.width, out.height);
-          ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
-          out.hidden = false;
-          out.dataset.mode = mode;
-          syncViewerStageHeight(displayHeight);
-        };
-        img.src = dataUrl;
-        return true;
-      }
-    } catch {}
-  }
-
   const source = getSourceCanvas(mode);
+  if (mode === 'adc' && !source) {
+    out.hidden = true;
+    syncViewerStageHeight(null);
+    return false;
+  }
   if (!source) {
     out.hidden = true;
     syncViewerStageHeight(null);
