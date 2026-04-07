@@ -38,21 +38,10 @@
           <div class="section-label">Operação</div>
           <div class="form-grid form-grid-2">
             <label class="field">
-              <span>Base</span>
-              <select id="baseSelect"></select>
-            </label>
-            <label class="field">
-              <span>Cabeceira</span>
-              <select id="departureEndSelect"></select>
-            </label>
-          </div>
-
-          <div class="form-grid form-grid-2">
-            <label class="field">
               <span>Aeronave</span>
               <select id="aircraftSetSelect">
-                <option value="6800" selected>6800 kg</option>
-                <option value="7000">7000 kg / Sup 90</option>
+                <option value="6800">6800 kg</option>
+                <option value="7000" selected>7000 kg / Sup 90</option>
               </select>
             </label>
             <label class="field">
@@ -66,17 +55,30 @@
             </label>
           </div>
 
-          <div class="form-grid">
-            <label class="field full-span">
-              <span>Visualização</span>
-              <select id="visualSelect">
-                <option value="" selected>Em branco</option>
-                <option value="adc">ADC</option>
-                <option value="wat">WAT</option>
-                <option value="rto">RTO</option>
-              </select>
+          <div class="form-grid form-grid-2">
+            <label class="field">
+              <span>Base</span>
+              <select id="baseSelect"></select>
+            </label>
+            <label class="field">
+              <span>Cabeceira</span>
+              <select id="departureEndSelect"></select>
             </label>
           </div>
+
+          <div class="form-grid">
+            <label class="field full-span">
+              <span>Matrícula (opcional)</span>
+              <input id="registration" type="text" value="" autocomplete="off" placeholder="Ex.: PR-XYZ">
+            </label>
+          </div>
+
+          <select id="visualSelect" hidden>
+            <option value="" selected>Em branco</option>
+            <option value="adc">ADC</option>
+            <option value="wat">WAT</option>
+            <option value="rto">RTO</option>
+          </select>
 
           <div class="section-label">Condições</div>
           <div class="form-grid form-grid-2">
@@ -84,14 +86,14 @@
               <span>PA (ft)</span>
               <div class="input-with-toggle">
                 <button id="paNegativeBtn" type="button" class="sign-toggle" aria-label="Alternar sinal da altitude pressão">−</button>
-                <input id="pressureAltitude" type="text" value="0" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="0">
+                <input id="pressureAltitude" type="text" value="" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="PA">
               </div>
             </label>
             <label class="field">
               <span>OAT (°C)</span>
               <div class="input-with-toggle">
                 <button id="oatNegativeBtn" type="button" class="sign-toggle" aria-label="Alternar sinal da temperatura">−</button>
-                <input id="oat" type="text" value="25" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="25" maxlength="3">
+                <input id="oat" type="text" value="" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="OAT" maxlength="3">
               </div>
             </label>
           </div>
@@ -99,11 +101,11 @@
           <div class="form-grid form-grid-2">
             <label class="field">
               <span>Weight (kg)</span>
-              <input id="actualWeight" type="text" value="6500" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="6500">
+              <input id="actualWeight" type="text" value="" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="Weight">
             </label>
             <label class="field">
               <span>Headwind (kt)</span>
-              <input id="headwind" type="text" value="5" inputmode="numeric" enterkeyhint="go" autocomplete="off" placeholder="5">
+              <input id="headwind" type="text" value="" inputmode="numeric" enterkeyhint="go" autocomplete="off" placeholder="Headwind">
             </label>
           </div>
 
@@ -113,7 +115,6 @@
             <button id="openRTOBtn" class="ghost-btn" type="button">Abrir RTO</button>
             <button id="openADCBtn" class="ghost-btn" type="button">Abrir ADC</button>
           </div>
-          <p id="runHint" class="helper">Uma única entrada alimenta WAT e RTO. O RTO calculado é enviado para a tabela de decisão da ADC.</p>
         </section>
 
         <section id="resultCard" class="panel result-panel pending">
@@ -165,6 +166,7 @@
             <div class="viewer-title" id="vizSubtitle">Em branco</div>
           </div>
           <div class="viewer-tabs">
+            <button id="sharePdfBtn" class="viewer-action-btn" type="button">Compartilhar PDF</button>
             <button class="viewer-tab" data-viz="adc" type="button">ADC</button>
             <button class="viewer-tab" data-viz="wat" type="button">WAT</button>
             <button class="viewer-tab" data-viz="rto" type="button">RTO</button>
@@ -172,6 +174,7 @@
         </div>
 
         <div id="vizWrap" class="viewer-stage">
+          <button id="adcOverlayBtn" class="adc-overlay-btn" type="button" hidden>Toque para ampliar</button>
           <canvas id="vizPreviewCanvas" class="viz-preview-canvas" width="1" height="1" hidden></canvas>
           <div id="vizPlaceholder" class="viewer-placeholder">
             <div class="placeholder-title">Visualização em branco</div>
