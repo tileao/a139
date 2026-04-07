@@ -52,10 +52,11 @@ button,input,select{font:inherit}
 .input-with-toggle input{flex:1 1 auto;min-width:0}
 .sign-toggle{width:38px;height:38px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:#243447;color:var(--text);font-size:22px;line-height:1;display:grid;place-items:center;cursor:pointer;padding:0;flex:0 0 38px}
 .sign-toggle:focus-visible,.sign-toggle:hover{border-color:var(--accent-2);box-shadow:0 0 0 3px rgba(47,167,160,.12)}
-.action-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .action-row .run-btn{grid-column:1 / -1}
 .run-btn{height:42px;border-radius:10px;border:0;background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#fff;font-weight:800;letter-spacing:.02em;cursor:pointer}
-.action-row .ghost-btn{height:38px;border-radius:8px;cursor:pointer;width:100%}
+.action-row .ghost-btn{height:38px;border-radius:8px;cursor:pointer}
+.helper{margin:10px 0 0;color:#E5EEF7;opacity:.78;font-size:12px;line-height:1.35}
 .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .result-box{background:#243447;border:1px solid rgba(255,255,255,.12);padding:10px;min-height:102px;border-radius:10px}
 .result-box.ok{background:linear-gradient(180deg, rgba(98,255,156,.20), rgba(22,56,40,.92));border-color:rgba(98,255,156,.74);box-shadow:0 0 0 1px rgba(98,255,156,.24), 0 0 24px rgba(98,255,156,.18)}
@@ -83,8 +84,8 @@ button,input,select{font:inherit}
 .viewer-pane{min-width:0;display:flex;flex-direction:column;gap:0;background:#111827;border:1px solid rgba(255,255,255,.12);box-shadow:var(--card-shadow);position:relative;align-self:start}
 .viewer-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;background:#243447;color:#E5EEF7;border-bottom:1px solid rgba(255,255,255,.08)}
 .viewer-title{font-size:18px;line-height:1.1;font-weight:400}
-.viewer-tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.viewer-tab,.viewer-action-btn{height:40px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#1a242d;color:#E5EEF7;cursor:pointer}
+.viewer-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.viewer-tab{height:40px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#1a242d;color:#E5EEF7;cursor:pointer}
 .viewer-tab.active{background:#2FA7A0;color:#fff;border-color:#2FA7A0}
 .viewer-stage{position:relative;min-height:0;background:#111827;overflow:hidden;display:block;line-height:0;flex:none;align-self:start}
 .viz-preview-canvas{display:block;width:100%;height:auto;background:#111827;vertical-align:top;cursor:zoom-in;margin:0}
@@ -143,8 +144,4 @@ body.fullscreen-body{overflow:hidden}
 
 
 .chart-fullscreen-overlay{position:fixed;inset:0;z-index:1000;background:#02060d;display:grid;grid-template-rows:auto 1fr}.chart-fullscreen-overlay[hidden]{display:none!important}.chart-fullscreen-top{display:flex;justify-content:flex-end;padding:10px 12px}.chart-fullscreen-close{width:42px;height:42px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(15,23,32,.86);color:#fff;font-size:22px;cursor:pointer}.chart-fullscreen-viewport{position:relative;overflow:hidden;touch-action:none}.chart-fullscreen-canvas{position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:0 18px 40px rgba(0,0,0,.35)}
-.viewer-action-btn{font-size:13px;font-weight:700;}
-.adc-overlay-btn{position:absolute;inset:0;border:0;background:transparent;color:transparent;z-index:3;cursor:zoom-in;}
-.adc-overlay-btn[hidden]{display:none!important;}
-.viz-frame.embed-visible{position:relative;left:0;top:0;width:100%;visibility:visible;pointer-events:none;display:block;border:0;background:#000;}
-.viz-frame.offscreen{position:absolute;left:-10000px;top:0;width:1px;height:1px;visibility:hidden;pointer-events:none;border:0;}
+.is-hidden-field{display:none!important}.module-open-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}.module-open-row .ghost-btn{height:38px;border-radius:8px;cursor:pointer}.full-span-mobile{grid-column:auto}@media (max-width: 640px){.module-open-row{grid-template-columns:repeat(3,minmax(0,1fr))}.module-open-row .ghost-btn{font-size:12px;padding:0 6px}}

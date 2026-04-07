@@ -9,7 +9,6 @@ const els = {
   departure: document.getElementById('departureEndSelect'),
   aircraftSet: document.getElementById('aircraftSetSelect'),
   config: document.getElementById('configurationSelect'),
-  registration: document.getElementById('registration'),
   pa: document.getElementById('pressureAltitude'),
   paNegativeBtn: document.getElementById('paNegativeBtn'),
   oat: document.getElementById('oat'),
@@ -18,6 +17,7 @@ const els = {
   wind: document.getElementById('headwind'),
   runBtn: document.getElementById('runBtn'),
   visualSelect: document.getElementById('visualSelect'),
+  registration: document.getElementById('aircraftRegistration'),
   statusChip: document.getElementById('statusChip'),
   resultCard: document.getElementById('resultCard'),
   watMax: document.getElementById('watMaxMetric'),
@@ -40,8 +40,6 @@ const els = {
   vizFacts: document.getElementById('vizFacts'),
   vizPreviewCanvas: document.getElementById('vizPreviewCanvas'),
   vizWrap: document.getElementById('vizWrap'),
-  sharePdfBtn: document.getElementById('sharePdfBtn'),
-  adcOverlayBtn: document.getElementById('adcOverlayBtn'),
 };
 
 function loadCtx() { try { return JSON.parse(localStorage.getItem(SHARED_KEY) || '{}'); } catch { return {}; } }
@@ -175,12 +173,12 @@ function collectInputs() {
     base: els.base.value,
     departureEnd: els.departure.value,
     aircraftSet: els.aircraftSet.value || '7000',
-    configuration: els.config.value || 'standard',
-    registration: String(els.registration?.value || '').trim(),
+    configuration: els.config.value,
     pressureAltitudeFt: Number(els.pa.value || 0),
     oatC: Number(els.oat.value || 0),
     weightKg: Number(els.weight.value || 0),
-    headwindKt: Number(els.wind.value || 0)
+    headwindKt: Number(els.wind.value || 0),
+    registration: (els.registration?.value || '').trim()
   };
 }
 
@@ -192,9 +190,8 @@ function pushSharedContext(input, patch = {}) {
     headwindKt: input.headwindKt,
     adcBase: input.base,
     adcDepartureEnd: input.departureEnd,
-    cataAircraftSet: input.aircraftSet,
     cataConfiguration: input.configuration,
-    cataRegistration: input.registration || '',
+    aircraftRegistration: input.registration || '',
     cataProcedure: 'clear',
     ...patch
   };
@@ -205,9 +202,9 @@ function restoreInputsFromContext() {
   const ctx = loadCtx();
   if (ctx.adcBase) els.base.value = ctx.adcBase;
   if (ctx.adcDepartureEnd) els.departure.value = ctx.adcDepartureEnd;
-  els.aircraftSet.value = ctx.cataAircraftSet || '7000';
-  els.config.value = ctx.cataConfiguration || 'standard';
-  if (ctx.cataRegistration != null && els.registration) els.registration.value = String(ctx.cataRegistration);
+  if (ctx.cataAircraftSet) els.aircraftSet.value = ctx.cataAircraftSet;
+  if (ctx.cataConfiguration) els.config.value = ctx.cataConfiguration;
+  if (ctx.aircraftRegistration && els.registration) els.registration.value = ctx.aircraftRegistration;
   if (ctx.pressureAltitudeFt != null) els.pa.value = String(ctx.pressureAltitudeFt);
   if (ctx.oatC != null) els.oat.value = String(ctx.oatC);
   if (ctx.weightKg != null) els.weight.value = String(ctx.weightKg);
@@ -660,30 +657,15 @@ function syncViewerStageHeight(px = null) {
   els.vizWrap.style.minHeight = `${h}px`;
 }
 
-function hideAllFrames() {
-  Object.values(frameMap).forEach(frame => {
-    frame.classList.remove('embed-visible');
-    frame.classList.add('offscreen');
-  });
-  if (els.adcOverlayBtn) els.adcOverlayBtn.hidden = true;
-}
-
 function renderPreview(mode) {
   const out = els.vizPreviewCanvas;
-  hideAllFrames();
-
-  if (mode === 'adc') {
-    const frame = adcFrame;
-    frame.classList.remove('offscreen');
-    frame.classList.add('embed-visible', 'active');
-    const h = resizeActiveFrame('adc') || 420;
-    out.hidden = true;
-    syncViewerStageHeight(h);
-    if (els.adcOverlayBtn) els.adcOverlayBtn.hidden = false;
-    return true;
-  }
 
   const source = getSourceCanvas(mode);
+  if (mode === 'adc' && !source) {
+    out.hidden = true;
+    syncViewerStageHeight(null);
+    return false;
+  }
   if (!source) {
     out.hidden = true;
     syncViewerStageHeight(null);
@@ -708,17 +690,15 @@ function renderPreview(mode) {
 
 function resizeActiveFrame(mode) {
   const frame = frameMap[mode];
-  if (!frame) return 0;
+  if (!frame) return;
   try {
     const doc = frame.contentDocument || frame.contentWindow?.document;
-    if (!doc) return 0;
+    if (!doc) return;
     const h = getModeContentHeight(doc, mode);
     if (h > 0) frame.style.height = `${h}px`;
-    return h;
   } catch (error) {
     console.warn('Falha ao ajustar altura do frame', mode, error);
   }
-  return 0;
 }
 
 function clearVisualization() {
@@ -836,60 +816,6 @@ function openFullscreenChart(mode) {
   fitFullscreenCanvas();
 }
 
-async function sourceImageForMode(mode) {
-  if (mode === 'adc') {
-    try {
-      const doc = await waitForIframe(adcFrame, ['vizCanvas']);
-      const canvas = doc.getElementById('vizCanvas');
-      if (canvas && canvas.width > 1) return { width: canvas.width, height: canvas.height, draw(ctx,x,y,w,h){ ctx.drawImage(canvas,0,0,canvas.width,canvas.height,x,y,w,h); } };
-    } catch {}
-  }
-  const source = getSourceCanvas(mode);
-  if (!source) return null;
-  const crop = getCanvasCrop(source, mode);
-  return { width: crop.w, height: crop.h, draw(ctx,x,y,w,h){ ctx.drawImage(source, crop.x, crop.y, crop.w, crop.h, x, y, w, h); } };
-}
-
-async function sharePdfComposite() {
-  const adc = await sourceImageForMode('adc');
-  const wat = await sourceImageForMode('wat');
-  const rto = await sourceImageForMode('rto');
-  if (!adc || !wat || !rto) { alert('Gere as cartas antes de compartilhar o PDF.'); return; }
-  const pageW = 1400;
-  const margin = 40;
-  const gap = 24;
-  const headerH = 160;
-  const topCellW = Math.floor((pageW - margin*2 - gap)/2);
-  const topH = Math.max(Math.round(topCellW * adc.height/adc.width), Math.round(topCellW * wat.height/wat.width));
-  const rtoW = pageW - margin*2;
-  const rtoH = Math.round(rtoW * rto.height/rto.width);
-  const pageH = headerH + topH + gap + rtoH + margin;
-  const canvas = document.createElement('canvas');
-  canvas.width = pageW; canvas.height = pageH;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,pageW,pageH);
-  ctx.fillStyle = '#0B1220'; ctx.font = 'bold 34px Inter, Arial'; ctx.fillText('AW139 Companion — Cat A Clear Area', margin, 50);
-  ctx.font = '22px Inter, Arial'; ctx.fillStyle = '#334155';
-  const input = collectInputs();
-  const generated = new Date().toLocaleString('pt-BR');
-  const lines = [
-    `Base: ${els.base.options[els.base.selectedIndex]?.text || input.base} | Cabeceira: ${els.departure.options[els.departure.selectedIndex]?.text || input.departureEnd}`,
-    `Aeronave: ${input.aircraftSet} | Config: ${input.configuration} | Matrícula: ${input.registration || '—'}`,
-    `PA: ${input.pressureAltitudeFt || 0} ft | OAT: ${input.oatC || 0} °C | Peso: ${input.weightKg || 0} kg | Vento: ${input.headwindKt || 0} kt`,
-    `Gerado em: ${generated}`
-  ];
-  lines.forEach((line, i)=> ctx.fillText(line, margin, 88 + i*26));
-  adc.draw(ctx, margin, headerH, topCellW, Math.round(topCellW * adc.height/adc.width));
-  wat.draw(ctx, margin + topCellW + gap, headerH, topCellW, Math.round(topCellW * wat.height/wat.width));
-  rto.draw(ctx, margin, headerH + topH + gap, rtoW, rtoH);
-  const dataUrl = canvas.toDataURL('image/png');
-  const w = window.open('', '_blank');
-  if (!w) { window.open(dataUrl, '_blank'); return; }
-  w.document.write(`<html><head><title>Cat A PDF</title><style>body{margin:0;font-family:Arial,sans-serif;background:#fff}img{width:100%;display:block}@media print{@page{size:A4 portrait;margin:10mm}}</style></head><body><img src="${dataUrl}"></body></html>`);
-  w.document.close();
-  setTimeout(()=>{ try { w.print(); } catch {} }, 400);
-}
-
 function setVisualization(mode, forceShow = true) {
   if (!mode) {
     clearVisualization();
@@ -918,10 +844,10 @@ function setupAutoAdvance() {
     { el: els.config, next: els.base },
     { el: els.base, next: els.departure },
     { el: els.departure, next: els.registration },
-    { el: els.registration, next: els.pa, maxDigits: null },
-    { el: els.pa, next: els.oat, minDigits: 1, maxDigits: 5 },
-    { el: els.oat, next: els.weight, minDigits: 1, maxDigits: 2 },
-    { el: els.weight, next: els.wind, minDigits: 3, maxDigits: 4 },
+    { el: els.registration, next: els.pa },
+    { el: els.pa, next: els.oat, minDigits: 3, maxDigits: 5 },
+    { el: els.oat, next: els.weight, minDigits: 2, maxDigits: 2 },
+    { el: els.weight, next: els.wind, minDigits: 4, maxDigits: 4 },
     { el: els.wind, next: els.runBtn, minDigits: 1, maxDigits: 2 },
   ];
 
@@ -932,11 +858,19 @@ function setupAutoAdvance() {
       return;
     }
 
+    if (rule.el === els.registration) {
+      rule.el.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        focusNext(rule.next);
+      });
+      return;
+    }
+
     rule.el.addEventListener('input', () => {
-      if (rule.el !== els.registration) sanitizeDigitsInput(rule.el, rule.maxDigits);
-      if (rule.el === els.registration) return;
+      sanitizeDigitsInput(rule.el, rule.maxDigits);
       const digits = digitsOnlyLength(rule.el);
-      if (rule.el === els.oat ? digits >= rule.minDigits : digits >= rule.minDigits) {
+      if (rule.el === els.oat ? digits === rule.minDigits : digits >= rule.minDigits) {
         focusNext(rule.next);
       }
     });
@@ -998,8 +932,6 @@ function bindEvents() {
   });
   els.sidebarToggleBtn.addEventListener('click', () => setSidebarCollapsed());
   els.vizPreviewCanvas.addEventListener('click', () => { const mode = els.vizPreviewCanvas.dataset.mode || els.visualSelect.value; if (mode) openFullscreenChart(mode); });
-  els.adcOverlayBtn?.addEventListener('click', () => openFullscreenChart('adc'));
-  els.sharePdfBtn?.addEventListener('click', sharePdfComposite);
   fullscreenEls.close.addEventListener('click', (event) => {
     event.stopPropagation();
     closeFullscreenChart();
