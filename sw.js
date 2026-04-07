@@ -4,8 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b0f14">
-  <title>AW139 Companion — WAT</title>
+  <title>AW139 Companion App — RTO / CTO Module</title>
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-180.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -16,53 +18,33 @@
           <div class="product-icon">⛭</div>
           <div>
             <div class="product-line">AW139 Companion</div>
-            <div class="product-sub">WAT</div>
+            <div class="product-sub">RTO / CTO</div>
           </div>
         </div>
       </div>
       <div class="topbar-right"></div>
     </header>
-
-    <header class="hero" hidden>
+    <header id="heroHeader" class="hero hero-compact" hidden>
       <div>
-        <p class="eyebrow">AW139</p>
-        <h1>AW139 WAT Companion</h1>
-        <p class="subtitle">Envelope check com roteamento por faixa de peso para AW139 6800 / 7000 + Offshore Enhanced</p>
-        <p class="build-version">Build v16.9.1</p>
+        <p class="eyebrow">AW139 Companion App</p>
+        <h1>RTO / CTO Module</h1>
+        <p id="subtitleEl" class="subtitle visually-hidden">Reject Take Off Distance — Supplement 50 — Figure 4-54</p>
+        <p id="buildVersionEl" class="build-version build-version-prominent">BUILD V53 • Figure 4-94 left-panel semantic relabel</p>
       </div>
-      <button id="installBtn" class="ghost hidden">Instalar</button>
     </header>
 
-    <section class="card form-card">
+    <section id="formSection" class="card form-card">
       <div class="card-title-row">
         <h2>Entradas</h2>
-        <span class="pill">Offline PWA • lógica 6800/7000</span>
+        <span class="pill">Offline PWA</span>
       </div>
 
       <div class="grid compact-grid">
-        <label class="control-block">
-          <span>Aeronave / limite WAT</span>
-          <div class="segmented">
-            <label class="segment-option">
-              <input type="radio" name="aircraftSet" value="6800" checked>
-              <span>6800 kg</span>
-            </label>
-            <label class="segment-option">
-              <input type="radio" name="aircraftSet" value="7000">
-              <span>7000 kg / Sup 90</span>
-            </label>
-          </div>
-        </label>
-
         <label class="control-block select-block">
           <span>Procedure</span>
           <div class="select-wrap">
-            <select id="procedure" aria-label="Procedure">
-              <option value="offshore" selected>CAT A Offshore Helideck</option>
-              <option value="enhanced">CAT A Offshore Enhanced</option>
-              <option value="clear">CAT A Clear Area</option>
-              <option value="catb">CAT B</option>
-              <option value="confined">CAT A Confined Area</option>
+            <select id="procedure" aria-label="Procedure" disabled>
+              <option value="clear" selected>Clear Area</option>
             </select>
           </div>
         </label>
@@ -72,9 +54,9 @@
           <div class="select-wrap">
             <select id="configuration" aria-label="Configuration">
               <option value="standard" selected>Standard</option>
-              <option value="eaps_off">EAPS OFF</option>
-              <option value="eaps_on">EAPS ON</option>
-              <option value="ibf">IBF Installed</option>
+              <option value="eapsOff">EAPS OFF</option>
+              <option value="eapsOn">EAPS ON</option>
+              <option value="ibfInstalled">IBF Installed</option>
             </select>
           </div>
         </label>
@@ -83,7 +65,7 @@
           <span>Pressure Altitude (ft)</span>
           <div class="input-with-toggle">
             <button id="paNegativeBtn" type="button" class="sign-toggle" aria-label="Alternar sinal da altitude pressão">±</button>
-            <input id="pressureAltitude" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="ex. 1200">
+            <input id="pressureAltitude" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="ex. 0">
           </div>
         </label>
 
@@ -91,85 +73,87 @@
           <span>OAT (°C)</span>
           <div class="input-with-toggle">
             <button id="oatNegativeBtn" type="button" class="sign-toggle" aria-label="Alternar sinal da temperatura">±</button>
-            <input id="oat" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="ex. 28" maxlength="3">
+            <input id="oat" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="ex. 25" maxlength="3">
           </div>
         </label>
 
         <label class="field-half compact-field">
-          <span>Actual Weight (kg)</span>
-          <input id="actualWeight" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="ex. 6550">
+          <span>Gross Weight (kg)</span>
+          <input id="actualWeight" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="ex. 6700">
         </label>
 
         <label id="headwindWrap" class="field-half compact-field narrow-field">
           <span>Headwind Component (kt)</span>
-          <input id="headwind" type="text" inputmode="numeric" enterkeyhint="done" autocomplete="off" placeholder="ex. 15">
+          <input id="headwind" type="text" inputmode="numeric" enterkeyhint="done" autocomplete="off" placeholder="ex. 5">
         </label>
       </div>
 
-      <div class="action-row">
-        <button id="runBtn" class="primary">Check WAT</button>
-        <button id="demoBtn" class="ghost">Demo 7000</button>
+      <div class="action-row action-row-main">
+        <button id="runBtn" class="primary">Calcular RTO</button>
+        <button id="resetBtn" class="ghost">Reset</button>
       </div>
-      <p id="formHint" class="hint">Aeronave 7000: até 6800 kg o app usa a base 6800 em todos os perfis. Acima de 6800 kg, somente CAT A Clear Area e CAT B migram para o Supp 90.</p>
+      <p id="formHint" class="hint">Escopo atual: Supplement 50, RTO Clear Area. No perfil Standard, até 6800 kg usa Supplement 50 e acima de 6800 kg usa Supplement 90.</p>
     </section>
 
-    <section id="statusCard" class="card status neutral">
-      <div class="status-badge">AGUARDANDO DADOS</div>
-      <div class="status-main">
-        <div>
-          <p class="label">Status</p>
-          <h2 id="statusTitle">Envelope WAT</h2>
-          <p id="statusText">Preencha os campos e execute o cálculo.</p>
+    <section id="statusCard" class="card status sticky-result neutral">
+      <div class="status-grid compact-status-grid">
+        <div class="status-summary">
+          <div id="statusBadge" class="status-badge">AGUARDANDO DADOS</div>
+          <p class="label status-kicker">Resultado</p>
+          <h2 id="statusTitle">RTO Figure 4-54</h2>
+          <p id="statusText" class="status-text">Fator de correção: —</p>
+          <p id="statusDetail" class="status-detail">Preencha os campos e execute o cálculo.</p>
         </div>
-        <div class="metrics">
-          <div class="metric">
-            <span class="label">Max Weight</span>
-            <strong id="maxWeight">—</strong>
-          </div>
-          <div class="metric">
-            <span class="label">Margin</span>
-            <strong id="margin">—</strong>
-          </div>
+
+        <div class="metric emphasis-metric result-main compact-result-main">
+          <span class="label">RTO final</span>
+          <strong id="finalMetric">—</strong>
+          <small id="finalMetricFt">—</small>
         </div>
       </div>
     </section>
 
-    <section class="card">
+    <section id="visualCard" class="card">
       <div class="card-title-row">
-        <h2>Interpolação visual</h2>
+        <h2>Visualização</h2>
         <div class="toolbar-row">
-          <button id="toggleChart" class="ghost small">Ocultar gráfico</button>
+          <button id="toggleChart" class="ghost small">Mostrar gráfico</button>
           <button id="exportPdfBtn" class="ghost small">Compartilhar / Baixar PDF</button>
         </div>
       </div>
-      <div id="chartPanel" class="chart-panel">
-        <div class="chart-stage">
-          <img id="chartBaseImage" src="docs/page-07.png" alt="Página completa do gráfico WAT">
-          <canvas id="chartCanvas" width="900" height="1137" aria-label="Visual interpolation chart"></canvas>
+      <div id="chartPanel" class="chart-panel hidden">
+        <div id="chartStage" class="chart-stage interactive-chart" role="button" tabindex="0" aria-label="Abrir visualização em tela cheia">
+          <canvas id="chartCanvas" width="2526" height="1785" aria-label="Visual interpolation chart"></canvas>
         </div>
         <div class="legend">
-          <span><i class="dot white"></i> Max weight interpolado</span>
-          <span><i class="dot blue"></i> Peso atual</span>
-          <span><i class="dot green"></i> Dentro</span>
-          <span><i class="dot red"></i> Fora</span>
+          <span><i class="dot amber"></i> PA / curvas OAT usadas</span>
+          <span><i class="dot cyan"></i> Transferência</span>
+          <span><i class="dot green"></i> curvas de peso usadas</span>
+          <span><i class="dot magenta"></i> Correction / Reference line</span>
         </div>
-        <p id="chartHint" class="hint">Overlay direto sobre a página completa do RFM: altitude, curvas de temperatura, peso atual, ponto sem vento e resultado final com headwind.</p>
-        <p id="chartReference" class="chart-reference"><strong>Gráfico em uso:</strong> Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.<br><strong>Suplemento:</strong> Supplement 50<br><strong>Página:</strong> S50-30<br><strong>Fonte:</strong> Leonardo AW139 Rotorcraft Flight Manual (RFM), Ed. 2, Rev. 32.</p>
+        <p id="chartHint" class="hint">Overlay direto sobre a página completa do RFM: altitude, curvas usadas no cálculo, transferência horizontal, leitura da distância e correção por headwind.</p>
+        <p id="chartReference" class="chart-reference"><strong>Gráfico em uso:</strong> Figure 4-54 — Rejected Take Off Distance OEI Clear Area.<br><strong>Suplemento:</strong> Supplement 50<br><strong>Página:</strong> S50-85<br><strong>Fonte:</strong> Leonardo AW139 Rotorcraft Flight Manual (RFM), Ed. 2, Rev. 32.</p>
       </div>
     </section>
 
-    <section class="card compact">
-      <h2>Motor WAT</h2>
-      <ul class="clean-list">
-        <li>Banco de dados em JSON por procedimento/configuração</li>
-        <li>Motor de interpolação separado da interface</li>
-        <li>Camada gráfica independente para visualização do envelope</li>
-        <li>Suporte nativo a uso offline via service worker</li>
-      </ul>
+    <section id="interpSection" class="card compact">
+      <div class="card-title-row">
+        <h2>Interpolação aplicada</h2>
+      </div>
+      <div id="interpBox" class="interp-box muted">Sem cálculo ainda.</div>
     </section>
+
+    <div id="chartFullscreen" class="chart-fullscreen hidden" aria-hidden="true">
+      <button id="closeFullscreenBtn" type="button" class="fullscreen-close-btn" aria-label="Voltar da visualização em tela cheia">✕</button>
+      <div id="fullscreenViewport" class="chart-fullscreen-viewport" aria-label="Visualização do gráfico em tela cheia com zoom e pan">
+        <div id="fullscreenContent" class="chart-fullscreen-content">
+          <canvas id="fullscreenChartCanvas" width="2526" height="1785" aria-label="Visual interpolation chart fullscreen"></canvas>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <script src="app.js?v=v16_9_7-offshore-label-fix" defer></script>
+  <script src="app.js?v=rto-engine-v49"></script>
   <script src="../shared/module-bridge.js"></script>
 </body>
 </html>

@@ -1,24 +1,24 @@
 {
-  "id": "SBXX",
-  "code": "SBXX",
+  "id": "XXXX",
+  "code": "XXXX",
   "name": "Nome da base",
   "city": "UF - Brasil",
-  "adcTitle": "SBXX ADC DD MON YY",
+  "adcTitle": "ADC dd mmm aa",
   "engineId": "adc_generic_v1",
   "stability": "draft",
   "locked": false,
-  "schemaVersion": 5,
+  "schemaVersion": 3,
   "defaultChartId": "ADC_MAIN",
   "defaultRunwayId": "RWY_00_00",
   "charts": [
     {
       "id": "ADC_MAIN",
       "label": "ADC principal",
-      "asset": "sbxx_chart_p1.png",
-      "assetName": "sbxx_chart_p1.png",
+      "asset": "arquivo_da_carta.png",
+      "assetName": "arquivo_da_carta.png",
       "size": {
-        "width": 863,
-        "height": 1300
+        "width": 1000,
+        "height": 1400
       }
     }
   ],
@@ -36,12 +36,12 @@
       "widthM": 30,
       "widthPx": 24,
       "thresholdRef": {
-        "x": 100,
-        "y": 100
+        "x": 120,
+        "y": 200
       },
       "thresholdOpp": {
-        "x": 700,
-        "y": 900
+        "x": 800,
+        "y": 1200
       },
       "declaredDistances": {
         "00": {
@@ -51,34 +51,17 @@
           "lda": 1000
         }
       },
-      "endFeatures": {
-        "00": {
-          "displacedThresholdM": 0,
-          "stopwayM": 0,
-          "clearwayM": 0
-        }
-      },
       "intersections": [
         {
           "id": "A",
           "name": "TWY A",
-          "metersFromRef": 300,
+          "metersFromRef": 700,
           "labelPoint": {
-            "x": 280,
-            "y": 420
+            "x": 640,
+            "y": 820
           }
         }
-      ],
-      "pavementRef": {
-        "x": 100,
-        "y": 100
-      },
-      "pavementOpp": {
-        "x": 700,
-        "y": 900
-      },
-      "distanceLogic": {},
-      "visualOverrides": {}
+      ]
     }
   ]
 }

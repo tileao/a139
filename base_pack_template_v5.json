@@ -7,7 +7,7 @@
   "engineId": "adc_generic_v1",
   "stability": "draft",
   "locked": false,
-  "schemaVersion": 5,
+  "schemaVersion": 4,
   "defaultChartId": "ADC_MAIN",
   "defaultRunwayId": "RWY_00_00",
   "charts": [
@@ -68,17 +68,7 @@
             "y": 420
           }
         }
-      ],
-      "pavementRef": {
-        "x": 100,
-        "y": 100
-      },
-      "pavementOpp": {
-        "x": 700,
-        "y": 900
-      },
-      "distanceLogic": {},
-      "visualOverrides": {}
+      ]
     }
   ]
 }
