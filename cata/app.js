@@ -158,6 +158,27 @@ async function waitForTruthy(readFn, timeoutMs = 5000) {
   return null;
 }
 
+async function waitForFieldValue(doc, id, expected, timeoutMs = 3000) {
+  const end = Date.now() + timeoutMs;
+  const normalize = (value) => String(value ?? '').trim();
+  while (Date.now() < end) {
+    const el = doc.getElementById(id);
+    if (el && normalize(el.value) === normalize(expected)) return true;
+    await sleep(60);
+  }
+  return false;
+}
+
+async function waitForNoPendingRto(doc, timeoutMs = 4000) {
+  const end = Date.now() + timeoutMs;
+  while (Date.now() < end) {
+    const pending = /recalculando|aguardando|loading|carregando/i.test(text(doc, 'statusDetail')) || /recalculando|aguardando|loading|carregando/i.test(text(doc, 'statusText'));
+    if (!pending) return true;
+    await sleep(60);
+  }
+  return false;
+}
+
 async function populateBaseOptions() {
   const doc = await waitForIframe(adcFrame, ['baseSelect', 'departureEndSelect']);
   const baseSelect = doc.getElementById('baseSelect');
@@ -217,17 +238,24 @@ async function runWAT(input) {
   setRadio(doc, 'aircraftSet', input.aircraftSet || '6800');
   setField(doc, 'procedure', 'clear');
   setField(doc, 'configuration', input.configuration);
-  await sleep(350);
+  await waitForFieldValue(doc, 'procedure', 'clear');
+  await waitForFieldValue(doc, 'configuration', input.configuration);
   setField(doc, 'pressureAltitude', input.pressureAltitudeFt);
   setField(doc, 'oat', input.oatC);
   setField(doc, 'actualWeight', input.weightKg);
   setField(doc, 'headwind', input.headwindKt);
-  try { doc.defaultView?.runCalculation?.(); } catch { clickField(doc, 'runBtn'); }
+  await waitForFieldValue(doc, 'pressureAltitude', input.pressureAltitudeFt);
+  await waitForFieldValue(doc, 'oat', input.oatC);
+  await waitForFieldValue(doc, 'actualWeight', input.weightKg);
+  await waitForFieldValue(doc, 'headwind', input.headwindKt);
+  try { await doc.defaultView?.runCalculation?.(); } catch { clickField(doc, 'runBtn'); }
 
   const maxText = await waitForTruthy(() => {
     const t = text(doc, 'maxWeight');
-    return t && t !== '—' ? t : null;
-  }, 5000);
+    const summary = text(doc, 'statusText');
+    const pending = /recalculando|aguardando|loading|carregando/i.test(summary);
+    return t && t !== '—' && !pending ? t : null;
+  }, 7000);
   const marginText = text(doc, 'margin');
   const summary = text(doc, 'statusText');
   const result = {
@@ -253,37 +281,48 @@ async function runRTO(input) {
   if (statusDetailEl) statusDetailEl.textContent = 'Recalculando…';
   if (statusTextEl) statusTextEl.textContent = 'Aguardando nova leitura.';
 
-  setField(doc, 'configuration', mapRtoConfig(input.configuration));
-  await sleep(240);
+  const mappedConfig = mapRtoConfig(input.configuration);
+  setField(doc, 'configuration', mappedConfig);
+  await waitForFieldValue(doc, 'configuration', mappedConfig, 3500);
   try {
     await doc.defaultView?.ensureEffectiveProfileLoaded?.({ preserveInputs: true, autoRun: false });
   } catch {}
-  await sleep(160);
-  try { doc.defaultView?.clearResultsOnly?.(); } catch {}
+  await waitForNoPendingRto(doc, 2500);
+  try { await doc.defaultView?.clearResultsOnly?.(); } catch {}
+
   setField(doc, 'pressureAltitude', input.pressureAltitudeFt);
   setField(doc, 'oat', input.oatC);
   setField(doc, 'actualWeight', input.weightKg);
   setField(doc, 'headwind', input.headwindKt);
-  await sleep(80);
+
+  await waitForFieldValue(doc, 'pressureAltitude', input.pressureAltitudeFt);
+  await waitForFieldValue(doc, 'oat', input.oatC);
+  await waitForFieldValue(doc, 'actualWeight', input.weightKg);
+  await waitForFieldValue(doc, 'headwind', input.headwindKt);
+
+  try { await doc.defaultView?.refreshWeightSensitiveProfileIfNeeded?.(); } catch {}
+  try { await doc.defaultView?.ensureEffectiveProfileLoaded?.({ preserveInputs: true, autoRun: false }); } catch {}
+  await waitForNoPendingRto(doc, 2500);
+
   try {
-    await doc.defaultView?.runCalculation?.({ skipEnsureProfile: true });
+    await doc.defaultView?.runCalculation?.();
   } catch {
     clickField(doc, 'runBtn');
   }
 
   let metricText = await waitForTruthy(() => {
     const t = text(doc, 'finalMetric');
-    const pending = /recalculando|aguardando/i.test(text(doc, 'statusDetail')) || /recalculando|aguardando/i.test(text(doc, 'statusText'));
+    const pending = /recalculando|aguardando|loading|carregando/i.test(text(doc, 'statusDetail')) || /recalculando|aguardando|loading|carregando/i.test(text(doc, 'statusText'));
     return /\d/.test(t) && t !== '—' && !pending && (t !== previousMetric || previousMetric === '—') ? t : null;
-  }, 7000);
+  }, 8000);
 
   if (!metricText) {
-    try { await doc.defaultView?.runCalculation?.({ skipEnsureProfile: true }); } catch { clickField(doc, 'runBtn'); }
+    try { await doc.defaultView?.runCalculation?.(); } catch { clickField(doc, 'runBtn'); }
     metricText = await waitForTruthy(() => {
       const t = text(doc, 'finalMetric');
-      const pending = /recalculando|aguardando/i.test(text(doc, 'statusDetail')) || /recalculando|aguardando/i.test(text(doc, 'statusText'));
+      const pending = /recalculando|aguardando|loading|carregando/i.test(text(doc, 'statusDetail')) || /recalculando|aguardando|loading|carregando/i.test(text(doc, 'statusText'));
       return /\d/.test(t) && t !== '—' && !pending ? t : null;
-    }, 5000);
+    }, 6000);
   }
 
   metricText = metricText || text(doc, 'finalMetric');
@@ -316,12 +355,13 @@ async function runADC(input, rtoResult) {
 
   const rows = [...doc.querySelectorAll('#decisionTable tr')].map(tr => {
     const tds = tr.querySelectorAll('td');
-    if (tds.length < 4) return null;
-    const rtoOkText = tds[2].textContent.trim();
-    const decisionText = tds[3].textContent.trim();
+    if (tds.length < 3) return null;
+    const point = tds[0].textContent.trim();
+    const rtoOkText = (tds[tds.length - 1]?.textContent || '').trim();
+    const decisionText = tds.length >= 4 ? tds[3].textContent.trim() : rtoOkText;
     const go = /^OK$/i.test(rtoOkText) || (/PODE/i.test(decisionText) && !/NÃO PODE|NAO PODE|NO GO/i.test(decisionText));
     return {
-      point: tds[0].textContent.trim(),
+      point,
       rtoOk: rtoOkText,
       decision: decisionText,
       go
